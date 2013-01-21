@@ -1,0 +1,27 @@
+CACHE MANIFEST
+#VERSION 16.88
+MochiKit.js
+raphael.js
+pouch.alpha.js
+raphcomo.js
+base64.js
+interface.js
+IndexedDBShim.js
+json2.js
+Codemirror.js
+jsbeautifier.js
+codemirror.css
+cobalt.css
+javascript.js
+simple-hint.js
+simple-hint.css
+javascript-hint.js
+#Images
+icon.png
+startup.png
+NETWORK:
+/interface_ui
+/data
+/local_interface_ui
+/local_user_interface_ui
+/local_data
