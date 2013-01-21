@@ -1,7 +1,7 @@
 //Define base server string
 //var rhost = "http://xcayp.webfactional.com/";
 //var rhost = "http://ecrew-beta:5984/";
-var rhost = "http://"+window.location.hostname+":"+window.location.port+"/";
+var rhost = "https://"+window.location.hostname+":"+window.location.port+"/";
 
 var databases = {};
 
