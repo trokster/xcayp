@@ -53,3 +53,14 @@ Anything pouch and Raphaeljs run on.
 
 IE10 support when pouch is ready. Ie 10- support is available by creating extra dbs on the source db ( in interface.js ) when in memory pouch is available, will switch to that.
 
+
+OK it works, what next ?
+------------------------
+
+You can edit interface elements, create new ones ( just enter an id that doesn't exist ) and replicate to source database when satisfied.
+
+Interface elements are called in main_interface object. Then eve is used to pass messages around.
+
+Have a look at main interface and say layer to get a gist of how things are done.
+Dedicated webpage coming soon.
+

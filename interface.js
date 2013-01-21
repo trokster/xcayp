@@ -194,24 +194,7 @@ waitForEvents([
         });
     }, keys(databases));
 
-    
-
-    // log("OK, everything is ready apprently, lets test a couple of things");
-    // databases.datadb.database.revsDiff({"test_label":["18-880687f592ff96f5889b5d6aefe7d6b5"]}, function(err, res){
-    //     if(err) {
-    //         log("ERROR: " + serializeJSON(err))
-    //     }
-    //     log("OK REVS_DIFF: " + serializeJSON(res));
-    // })
-    // databases.datadb.database.get("test_label", {"revs":true, conflicts:true, revs_info:true, deleted_conflicts:true}, function(err, res){
-    //     if(err) {
-    //         log("ERROR: " + serializeJSON(err))
-    //     }
-    //     log("OK RESULT: " + serializeJSON(res));
-    // })
-
-    // return;
-    
+        
     log("Sending request for main_interface");
 
 
@@ -223,10 +206,7 @@ waitForEvents([
         
         var k = (map(function(doc){ return doc.id}, docs.rows));
         log("ALLDOCS: [ " + k.join(", ") + " ]");
-        //log("KEYS: " + keys(docs.rows[k.indexOf("editor")].value));
-        //log(serializeJSON(docs));
-        //If we can't find main interface, it means we don't have enough local info
-        //So we sync, otherwise spawn locally
+
         if(findValue(k, "main_interface")<0 || findValue(k, "db_widget")<0){
             log("Can't find minimal interface, requesting sync from");
             databases["interfacedb"].sync.from = true;
