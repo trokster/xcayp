@@ -33,3 +33,6 @@ Once first replication is complete, you can tick off the replication arrow on in
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
+
+You're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
+
