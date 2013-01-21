@@ -10,8 +10,8 @@ Goal is simple: create a robust common library where participants may drop custo
 Dependencies:
 -------------
 
-- Mochikit a simple feature complete js framework  							--> http://mochikit.com
-- Raphael a cross browser SVG library										--> http://raphaeljs.com
-- pouchdb the database that syncs											--> http://pouchdb.com
-- Codemirror in browser editor that gave me the idea in the first place		--> http://codemirror.com
-- Embedded within pouch for the moment: jquery								--> http://jquery.com
+- Mochikit a simple feature complete js framework  							 --> http://mochikit.com
+- Raphael a cross browser SVG library										 --> http://raphaeljs.com
+- pouchdb the database that syncs											 --> http://pouchdb.com
+- Codemirror in browser editor that gave me the idea in the first place		 --> http://codemirror.com
+- Embedded within pouch for the moment: jquery								 --> http://jquery.com
