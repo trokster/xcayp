@@ -21,18 +21,22 @@ Give it a shot :)
 ----------------
 
 You have a choice: replicate my couchdb databases:
+
 https://xcayp.cloudant.com/interface
+
 https://xcayp.cloudant.com/data
+
 https://xcayp.cloudant.com/interface_ui
 
-Then point to your own db, or play around with it locally at ( remote saves not allowed ):
+Then point to your own db, or play around with it locally at:
 
 https://xcayp.cloudant.com/interface/_design/interface/interface.html
+
+ ( remote saves not allowed )
 
 Once first replication is complete, you can tick off the replication arrow on interfacedb so the login dialog stops popping up.
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
-
-You're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
+When you're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
 
