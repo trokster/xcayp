@@ -16,6 +16,7 @@ Dependencies:
 - Codemirror in browser editor that gave me the idea in the first place		 --> http://codemirror.com
 - Embedded within pouch for the moment: jquery								 --> http://jquery.com
 
+Pouch version is custom, I'll sync up when ready.
 
 Give it a shot :)
 ----------------
@@ -39,4 +40,16 @@ Once first replication is complete, you can tick off the replication arrow on in
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
 When you're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
+
+
+
+Supported Browsers:
+chrome
+android chrome
+safari
+mobile safari
+
+Anything pouch and Raphaeljs run on.
+
+IE10 support when pouch is ready. Ie 10- support is available by creating extra dbs on the source db ( in interface.js ) when in memory pouch is available, will switch to that.
 
