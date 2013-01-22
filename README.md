@@ -21,27 +21,29 @@ Pouch version is custom, I'll sync up when ready.
 Give it a shot :)
 ----------------
 
-You have a choice: replicate my couchdb databases:
+You have two alternatives:
 
-https://xcayp.cloudant.com/interface
-
-https://xcayp.cloudant.com/data
-
-https://xcayp.cloudant.com/interface_ui
-
-Then point to your own db, or play around with it locally at:
+Play around with it locally at:
 
 https://xcayp.cloudant.com/interface/_design/interface/interface.html
 
  ( remote saves not allowed )
 
-Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
 When you're set up, click on top right JS icon ( half hidden ), and start playing with your interface.
+
+Alternatively you can replicate these couchdb databases:
+
+https://xcayp.cloudant.com/interface
+https://xcayp.cloudant.com/data
+https://xcayp.cloudant.com/interface_ui
+
+Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
 
 
 Supported Browsers:
+------------------
 chrome
 android chrome
 safari
@@ -57,9 +59,9 @@ OK it works, what next ?
 
 You can edit interface elements, create new ones ( just enter an id that doesn't exist ) and replicate to source database when satisfied.
 
-Interface elements are called in main_interface object. Then eve is used to pass messages around.
+Interface elements are called in main_interface object. Then eve.js is used to pass messages around.
 
-Have a look at main interface and say layer to get a gist of how things are done.
+Have a look at main interface and layer to get a gist of how things are done.
 Dedicated webpage coming soon.
 
 
