@@ -15,7 +15,7 @@ For the time being the interface is composed of:
 or synchronised directly to the server whenever you are online.
 
 
-The goal is to provide to the comunity  a robust interface basis which can be used by other as the fundation to build 
+The goal is to provide the community with a robust interface base which can be used by other as the fundation to build 
 their online aplications.
 
 Status
