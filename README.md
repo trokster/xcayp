@@ -6,6 +6,11 @@ It could be summarized as a pouch app. A web app that can be customized in brows
 
 Goal is simple: create a robust common library where participants may drop custom interfaces that they feel would be useful to the community.
 
+Status
+------
+
+Very very alpha.
+
 Dependencies:
 -------------
 Xcayp is build on the following apps which brings critical functionalities:
@@ -21,12 +26,6 @@ There is no known issues with modern version of Chrome, android Browser, safari,
 
 IE Support is only partial for the moment due to the lack of support for pouchdb
 Ie 10 operation is still possible with some work by creating extra dbs on the source db ( in interface.js ) when in memory pouch is available, will switch to that.
-
-
-Status
-------
-
-Very very alpha.
 
 
 Give it a shot :)
