@@ -10,8 +10,8 @@ synchronisation capabilities. Allowing a radical approach to user interfaces, de
 
 For the time being the interface is composed of:
 
- - A code editor allowing online modification of the interface objects, regenerating the frontend in real time
- - Widgets enabling to control the connection to the source DBs, and therefore to manage if work is performed locally 
+ - A code editor allowing online modification of the interface objects, regenerating the frontend in real time.
+ - Widgets controling the connection to the remote DBs, and therefore choose if work is performed locally 
 or synchronised directly to the server whenever you are online.
 
 
