@@ -15,8 +15,8 @@ or synchronised directly to the server whenever you are online.
 
 
 The goal is to provide the community with a robust interface along with a component repository that can be used by 
-others as the fundation to build their online applications. Thanks to the very nature of the technology used, the end 
-user and applications sync for free
+others as the fundation to build their online applications. Thanks to the very nature of the technology used, you get end 
+user and applications data sync for free
 
 
 Status
