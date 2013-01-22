@@ -35,7 +35,7 @@ Xcayp is built upon the following libraries for critical functionalities:
 
 Supported Browsers:
 ------------------
-Xcap has been tested with modern versions of Chrome, Android Chrome, Safari, Mobile Safari & Firefox (16+). 
+Xcayp has been tested with modern versions of Chrome, Android Chrome, Safari, Mobile Safari & Firefox (16+). 
 
 IE support is only partial for the moment due to the lack of appcache and localstore. IE10 support should be 
 enabled when Pouchdb implements it.
