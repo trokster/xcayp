@@ -2,16 +2,23 @@ Xcayp
 =====
 
 Have you ever dreamed of escaping from your PC and code from any internet enabled device? Xcap allow this and much more.
-In fact we do not yet fully understand the potential of this technology but we know it is a stepping stone in a new teritorry. 
+In fact we do not yet fully understand the potential of this technology but we know it is a stepping stone in a new 
+teritorry. 
 
-Xcayp is a modular online interface of which the code is stored in an web oriented database with advanced synchronisation capabilities. For the time being the interface is limited, it is composed of:
+Xcayp is a modular online interface of which the code is stored in an web oriented database with advanced 
+synchronisation capabilities. 
 
-A code editor allowing online modification of the interfaces objects, therefore allowing its own modifications in real time.
+For the time being the interface is composed of:
 
-And widgets enabling to control the connection to the source DBs, and therefor to manage if work is performed locally or synchronised imediately to the server.
+A code editor allowing online modification of the interfaces objects, therefore allowing its own modifications in real 
+time.
+
+And widgets enabling to control the connection to the source DBs, and therefore to manage if work is performed locally 
+or synchronised directly to the server whenever you are online.
 
 
-The goal is to provide to the comunity  a robust interface basis which can be used by other as the fundation to build their online aplications.
+The goal is to provide to the comunity  a robust interface basis which can be used by other as the fundation to build 
+their online aplications.
 
 Status
 ------
