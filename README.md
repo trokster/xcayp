@@ -10,10 +10,10 @@ synchronisation capabilities. Allowing a radical approach to interface, devlopme
 
 For the time being the interface is composed of:
 
-A code editor allowing online modification of the interfaces objects, therefore allowing its own modifications in real 
+ - A code editor allowing online modification of the interfaces objects, therefore allowing its own modifications in real 
 time.
 
-And widgets enabling to control the connection to the source DBs, and therefore to manage if work is performed locally 
+ - Widgets enabling to control the connection to the source DBs, and therefore to manage if work is performed locally 
 or synchronised directly to the server whenever you are online.
 
 
