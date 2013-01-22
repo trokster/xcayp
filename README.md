@@ -35,8 +35,6 @@ https://xcayp.cloudant.com/interface/_design/interface/interface.html
 
  ( remote saves not allowed )
 
-Once first replication is complete, you can tick off the replication arrow on interfacedb so the login dialog stops popping up.
-
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
 When you're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
