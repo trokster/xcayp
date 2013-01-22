@@ -1,7 +1,7 @@
 Xcayp
 =====
 
-Have you ever dreamed of escaping from your PC and start coding from any internet enabled device? Xcayp allow this and much more.
+Have you ever dreamt of escaping from your PC and start coding from any internet enabled device? Xcayp allow this and much more.
 In fact we do not yet understand the full potential of this approach. But we feel it is a stepping stone into new 
 territories. 
 
