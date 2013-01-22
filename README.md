@@ -29,8 +29,11 @@ https://xcayp.cloudant.com/interface/_design/interface/interface.html
 
  ( remote saves not allowed )
 
-
 When you're set up, click on top right JS icon ( half hidden ), and start playing with your interface.
+
+
+Bring it on, I Couch like a pro
+-------------------------------
 
 Alternatively you can replicate these couchdb databases:
 
