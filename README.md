@@ -38,7 +38,7 @@ Supported Browsers:
 Xcap has been tested with modern versions of Chrome, Android Chrome, Safari, Mobile Safari & Firefox (16+). 
 
 IE support is only partial for the moment due to the lack of appcache and localstore. IE10 support should be 
-enabled when Pouchdb implements it
+enabled when Pouchdb implements it.
 
 Opera not tested
 
@@ -58,7 +58,7 @@ https://xcayp.cloudant.com/interface/_design/interface/interface.html
 OK it works, what next ?
 ------------------------
 
-You can edit interface elements, create new ones ( just enter an id that doesn't exist ) and replicate to source database when satisfied.
+You can edit interface elements, create new ones ( just enter an id that doesn't exist and delete the rev key ) and replicate to source database when satisfied.
 
 Interface elements are called in main_interface object. Then eve.js is used to pass messages around.
 
@@ -71,12 +71,9 @@ Bring it on, I Couch like a pro
 -------------------------------
 
 If you want to hav your own server you will need to replicate thee following couchdb databases:
-
-Interface DB for replication https://xcayp.cloudant.com/interface
-
-Data DB for replicationhttps://xcayp.cloudant.com/data
-
-UI DB for replicationhttps://xcayp.cloudant.com/interface_ui
+ - Interface DB for replication https://xcayp.cloudant.com/interface
+ - Data DB for replicationhttps://xcayp.cloudant.com/data
+ - UI DB for replicationhttps://xcayp.cloudant.com/interface_ui
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
