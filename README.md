@@ -26,7 +26,7 @@ Functional but very very alpha.
 
 Dependencies:
 -------------
-Xcayp is built upon the following libraries which brings critical functionalities:
+Xcayp is built upon the following libraries for critical functionalities:
 - Mochikit a simple feature complete js framework    					 --> http://mochikit.com
 - Raphael a cross browser SVG library										 --> http://raphaeljs.com
 - pouchdb the database that syncs											 --> http://pouchdb.com
