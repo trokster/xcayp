@@ -1,7 +1,7 @@
 Xcayp
 =====
 
-Have you ever dreamed of escaping from your PC and code from any internet enabled device? Xcap allow this and much more.
+Have you ever dreamed of escaping from your PC and start coding from any internet enabled device? Xcap allow this and much more.
 In fact we do not yet fully understand the potential of this technology but we know it is a stepping stone in a new 
 teritorry. 
 
