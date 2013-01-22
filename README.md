@@ -35,7 +35,9 @@ When you're set up, click on top right JS icon ( half hidden ), and start playin
 Alternatively you can replicate these couchdb databases:
 
 https://xcayp.cloudant.com/interface
+
 https://xcayp.cloudant.com/data
+
 https://xcayp.cloudant.com/interface_ui
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
