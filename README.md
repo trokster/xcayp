@@ -37,7 +37,7 @@ https://xcayp.cloudant.com/interface/_design/interface/interface.html
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
-When you're set up, click on top right JS icon ( half hidden ), and starting playing with your interface.
+When you're set up, click on top right JS icon ( half hidden ), and start playing with your interface.
 
 
 
