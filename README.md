@@ -9,14 +9,13 @@ Xcayp is a modular online interface in which the code is stored in a web oriente
 synchronisation capabilities. Allowing a radical approach to user interfaces, development and deployment.  
 
 For the time being the interface is composed of:
-
  - A code editor allowing online modification of the interface objects, regenerating the frontend in real time.
  - Widgets controling the connection to the remote DBs, and therefore choose if work is performed locally 
 or synchronised directly to the server whenever you are online.
 
 
-The goal is to provide the community with a robust interface base which can be used by other as the fundation to build 
-their online aplications.
+The goal is to provide the community with a robust interface along with a component repository that can be used by 
+others as the fundation to build their online applications.
 
 Status
 ------
