@@ -23,7 +23,7 @@ their online aplications.
 Status
 ------
 
-Very very alpha.
+Functional but very very alpha.
 
 Dependencies:
 -------------
