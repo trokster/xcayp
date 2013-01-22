@@ -6,7 +6,7 @@ In fact we do not yet understand the full potential of this technology. But we k
 teritorries. 
 
 Xcayp is a modular online interface of which the code is stored in an web oriented database with advanced 
-synchronisation capabilities. 
+synchronisation capabilities. Allowing a radical approach to interface, devlopment, deployment.  
 
 For the time being the interface is composed of:
 
