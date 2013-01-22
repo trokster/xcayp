@@ -8,21 +8,9 @@ Goal is simple: create a robust common library where participants may drop custo
 
 
 
-Dependencies:
--------------
-
-- Mochikit a simple feature complete js framework  							 --> http://mochikit.com
-- Raphael a cross browser SVG library										 --> http://raphaeljs.com
-- pouchdb the database that syncs											 --> http://pouchdb.com
-- Codemirror in browser editor that gave me the idea in the first place		 --> http://codemirror.com
-- Embedded within pouch for the moment: jquery								 --> http://jquery.com
-
-Pouch version is custom, I'll sync up when ready.
 
 Give it a shot :)
 ----------------
-
-You have two alternatives:
 
 Play around with it locally at:
 
@@ -32,33 +20,23 @@ https://xcayp.cloudant.com/interface/_design/interface/interface.html
 
 When you're set up, click on top right JS icon ( half hidden ), and start playing with your interface.
 
+Dependencies:
+-------------
 
-Bring it on, I Couch like a pro
--------------------------------
+- Mochikit a simple feature complete js framework   						 --> http://mochikit.com
+- Raphael a cross browser SVG library										 --> http://raphaeljs.com
+- pouchdb the database that syncs											 --> http://pouchdb.com
+- Codemirror in browser editor that gave me the idea in the first place		 --> http://codemirror.com
+- Embedded within pouch for the moment: jquery								 --> http://jquery.com
 
-Alternatively you can replicate these couchdb databases:
-
-https://xcayp.cloudant.com/interface
-
-https://xcayp.cloudant.com/data
-
-https://xcayp.cloudant.com/interface_ui
-
-Note: couch databases should be behind https, otherwise you'll need to alter interface.js
-
-
-
+Pouch version is custom, I'll sync up when ready.
 
 Supported Browsers:
 ------------------
-chrome
-android chrome
-safari
-mobile safari
+There is no known issues with modern version of Chrome, android Browser, safari, mobile safari & Firefox 16 or more. 
 
-Anything pouch and Raphaeljs run on.
-
-IE10 support when pouch is ready. Ie 10- support is available by creating extra dbs on the source db ( in interface.js ) when in memory pouch is available, will switch to that.
+IE Support is only partial for the moment due to the lack of support for pouchdb
+Ie 10 operation is still possible with some work by creating extra dbs on the source db ( in interface.js ) when in memory pouch is available, will switch to that.
 
 
 OK it works, what next ?
@@ -76,3 +54,17 @@ Status
 ------
 
 Very very alpha.
+
+
+Bring it on, I Couch like a pro
+-------------------------------
+
+If you want to hav your own server you will need to replicate thee following couchdb databases:
+
+https://xcayp.cloudant.com/interface
+https://xcayp.cloudant.com/data
+https://xcayp.cloudant.com/interface_ui
+
+Note: couch databases should be behind https, otherwise you'll need to alter interface.js
+
+
