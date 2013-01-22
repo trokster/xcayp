@@ -1,10 +1,16 @@
-xcayp
+Xcayp
 =====
 
-It could be summarized as a pouch app. A web app that can be customized in browser, everywhere where pouchdb(https://github.com/daleharvey/pouchdb) is supported. A skeleton is provided that connects to the source DBs, interface objects are downloaded locally from source DBs and revived.
+Have you ever dreamed of escaping from your PC and code from any internet enabled device Xcap allow this and much more. In fact we do not yet fully understand potential of this technology but we know it is a stepping stone in a new teritorry. 
+
+Xcayp is a modular online interface of which the code is stored in an web oriented database with advanced synchronisation capabilities. For the time being the interface is limited, it is composed of:
+
+A code editor allowing online modification of the interfaces objects, therefore allowing its own modifications in real time.
+
+And widgets enabling to control the connection to the source DBs, and therefor to manage if work is performed locally or synchronised imediately to the server.
 
 
-Goal is simple: create a robust common library where participants may drop custom interfaces that they feel would be useful to the community.
+The goal is to provide to the comunity  a robust interface basis which can be used by other as the fundation to build their online aplications.
 
 Status
 ------
@@ -58,9 +64,11 @@ Bring it on, I Couch like a pro
 
 If you want to hav your own server you will need to replicate thee following couchdb databases:
 
-https://xcayp.cloudant.com/interface
-https://xcayp.cloudant.com/data
-https://xcayp.cloudant.com/interface_ui
+Interface DB for replication https://xcayp.cloudant.com/interface
+
+Data DB for replicationhttps://xcayp.cloudant.com/data
+
+UI DB for replicationhttps://xcayp.cloudant.com/interface_ui
 
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
