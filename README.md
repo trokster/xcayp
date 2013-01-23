@@ -73,7 +73,7 @@ Dedicated webpage coming soon.
 Bring it on, I Couch like a pro
 -------------------------------
 
-If you want to have your own server you will need to replicate thee following couchdb databases:
+If you want to have your own server you will need to replicate the following couchdb databases:
  - Interface DB for replication https://xcayp.cloudant.com/interface
  - Data DB for replication https://xcayp.cloudant.com/data
  - UI DB for replication https://xcayp.cloudant.com/interface_ui
