@@ -1,9 +1,7 @@
 Xcayp
 =====
 
-Have you ever dreamt of escaping from your PC and start coding from any internet enabled device? Xcayp allow this and much more.
-In fact we do not yet understand the full potential of this approach, but we feel it is a stepping stone into new 
-territories. 
+Have you ever dreamt of working on your websites from any device with a browser? Xcayp allow this and much more.
 
 Xcayp is a modular online interface in which the code is stored in a web oriented database (couchdb) with advanced 
 sync capabilities. This allows for radical approach to user interfaces, development and deployment.  
@@ -22,11 +20,11 @@ user and application data sync for free
 Status
 ------
 
-Functional but very very alpha.
+Functional but very very alpha. We mean it.
 
 Dependencies:
 -------------
-Xcayp is built upon the following libraries for critical functionalities:
+Xcayp is built upon the following libraries:
 - Mochikit: a simple feature complete js framework    					 --> http://mochikit.com
 - Raphael: a cross browser SVG library										 --> http://raphaeljs.com
 - Pouchdb: the database that syncs											 --> http://pouchdb.com
@@ -40,8 +38,8 @@ Supported Browsers:
 ------------------
 Xcayp has been tested with modern versions of Chrome, Android Chrome, Safari, Mobile Safari & Firefox (16+). 
 
-IE support is only partial for the moment due to the lack of appcache and localstore. IE10 support should be 
-enabled when Pouchdb implements it.
+IE support is only partial for the moment (remote pouch simulates local pouchdb ). IE10 support should be 
+soon when Pouchdb implements it.
 
 Opera not tested
 
