@@ -32,6 +32,9 @@ Xcayp is built upon the following libraries for critical functionalities:
 - Pouchdb: the database that syncs											 --> http://pouchdb.com
 - Codemirror: in browser editor that gave me the idea in the first place		 --> http://codemirror.com
 - Jquery: Embedded within pouch for the moment								 --> http://jquery.com
+- Jsbeautifier: To make your code pretty
+- base64.js: for btoa/atob polyfill
+- json2: JSON library not sure if needed anymore.
 
 Supported Browsers:
 ------------------
