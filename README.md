@@ -2,14 +2,14 @@ Xcayp
 =====
 
 Have you ever dreamt of escaping from your PC and start coding from any internet enabled device? Xcayp allow this and much more.
-In fact we do not yet understand the full potential of this approach. But we feel it is a stepping stone into new 
+In fact we do not yet understand the full potential of this approach, but we feel it is a stepping stone into new 
 territories. 
 
-Xcayp is a modular online interface in which the code is stored in a web oriented database with advanced 
-synchronisation capabilities. Allowing a radical approach to user interfaces, development and deployment.  
+Xcayp is a modular online interface in which the code is stored in a web oriented database (couchdb) with advanced 
+sync capabilities. This allows for radical approach to user interfaces, development and deployment.  
 
 For the time being the interface is composed of:
- - A code editor allowing online modification of the interface objects, regenerating the frontend in real time.
+ - A code editor allowing online/offline modification of the interface objects, regenerating the frontend in real time.
  - Widgets controling the connection to the remote DBs, and therefore choose if work is performed locally 
 or synchronised directly to the server whenever you are online.
 
