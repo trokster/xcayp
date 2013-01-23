@@ -33,7 +33,7 @@ Xcayp is built upon the following libraries for critical functionalities:
 - Codemirror: in browser editor that gave me the idea in the first place		 --> http://codemirror.com
 - Jquery: Embedded within pouch for the moment								 --> http://jquery.com
 - Jsbeautifier: To make your code pretty
-- base64.js: for btoa/atob polyfill
+- base64.js: for btoa/atob polyfill ( ie )
 - json2: JSON library not sure if needed anymore.
 
 Supported Browsers:
