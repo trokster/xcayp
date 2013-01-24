@@ -28,7 +28,7 @@ Xcayp is built upon the following libraries:
 - Mochikit: a simple feature complete js framework    					 --> http://mochikit.com
 - Raphael: a cross browser SVG library										 --> http://raphaeljs.com
 - Pouchdb: the database that syncs											 --> http://pouchdb.com
-- Codemirror: in browser editor that gave me the idea in the first place		 --> http://codemirror.com
+- Codemirror: in browser editor that gave me the idea in the first place		 --> http://codemirror.net
 - Jquery: Embedded within pouch for the moment								 --> http://jquery.com
 - Jsbeautifier: To make your code pretty
 - base64.js: for btoa/atob polyfill ( ie )
