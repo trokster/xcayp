@@ -78,6 +78,8 @@ If you want to have your own server you will need to replicate the following cou
  - Data DB for replication https://xcayp.cloudant.com/data
  - UI DB for replication https://xcayp.cloudant.com/interface_ui
 
+Then go to: https://your.couchdb.database.com/interface/_design/interface/interface.html
+
 Note: couch databases should be behind https, otherwise you'll need to alter interface.js
 
 
