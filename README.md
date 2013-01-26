@@ -48,7 +48,9 @@ Opera not tested
 Give it a shot :)
 ----------------
 
-Play around with it locally to experience new way to use a DB 
+Play around with it to experience new way to use a DB, A test server is set-up allowing you to test the interface & the editor. Keep in mind that for obvious security reason the change you will make will be limited to the local image and will not be persistant noe sent to the server
+
+
 
 When the page is up, click on top right JS icon ( half hidden ), and start playing with your interface.
 ( remote saves not allowed )
@@ -56,6 +58,7 @@ When the page is up, click on top right JS icon ( half hidden ), and start playi
 Click to play at:
 
 https://xcayp.cloudant.com/interface/_design/interface/interface.html
+
 
 
 OK it works, what next ?
