@@ -48,7 +48,9 @@ Opera not tested
 Give it a shot :)
 ----------------
 
-Play around with it to experience new way to use a DB, A test server is set-up allowing you to test the interface & the editor. Keep in mind that for obvious security reason the change you will make will be limited to the local image and will not be persistant noe sent to the server
+Play around with it to experience new way to use a DB, A test server is set-up allowing you to test the interface & 
+the editor. Keep in mind that for obvious security reason the change you will make will be limited to the local image 
+and will not be persistant nor sent to the server
 
 
 
