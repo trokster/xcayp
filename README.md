@@ -59,7 +59,7 @@ When the page is up, click on top right JS icon ( half hidden ), and start playi
 
 Click to play at:
 
-https://xcayp.com/interface/_design/interface/interface.html
+https://xcayp.com
 
 
 
