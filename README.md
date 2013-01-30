@@ -42,7 +42,7 @@ Firefox for Android refuses to cooperate at the moment.
 IE support is only partial for the moment (remote pouch simulates local pouchdb ). IE10 support should be 
 soon when Pouchdb implements it.
 
-Chrome on nexus7 has Ben reported not to work
+Chrome on nexus7 has been reported not to work
 
 Opera not tested
 
