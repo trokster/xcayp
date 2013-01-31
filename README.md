@@ -41,6 +41,8 @@ Xcayp has been tested with modern versions of Chrome, Android Chrome, Android fi
 IE support is only partial for the moment (remote pouch simulates local pouchdb ). IE10 support should be 
 soon when Pouchdb implements it.
 
+This list assumes your browser supports SVG and indexeddb.
+
 Chrome on nexus7 has been reported not to work
 
 Opera not tested
