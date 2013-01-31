@@ -36,8 +36,7 @@ Xcayp is built upon the following libraries:
 
 Supported Browsers:
 ------------------
-Xcayp has been tested with modern versions of Chrome, Android Chrome, Safari, Mobile Safari & Firefox (16+).
-Firefox for Android refuses to cooperate at the moment.
+Xcayp has been tested with modern versions of Chrome, Android Chrome, Android firefox, Safari, Mobile Safari & Firefox (16+).
 
 IE support is only partial for the moment (remote pouch simulates local pouchdb ). IE10 support should be 
 soon when Pouchdb implements it.
