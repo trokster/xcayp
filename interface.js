@@ -1,6 +1,8 @@
-//Define base server string
-var rhost = (window.location+"").split("://")[0]+ "://" + window.location.hostname + ":" + window.location.port + "/";
+var rhost = (window.location + "").split("://")[0] + "://" + window.location.hostname + ":" + window.location.port + "/";
 window.LOG_INFO_REPLICATION = false;
+window.AJAX_CONCURRENT_REQUEST_LIMIT = 200;
+window.INITIAL_LOG_LENGTH = 5 ;
+window.PINPOINT = "main_interface";
 
 var databases = {};
 
@@ -20,24 +22,6 @@ databases.interfacedb = {
     polling: 1500
 };
 
-// //Define UI DB ( persist only locally )
-// //Might need to rename once role is more refined
-// databases.uidb = {
-//     "name"          : "user_interface",
-//     "local"         : "user_interface_ui",
-//     //Note :: This is persisted only locally, internet explorer might need slightly different
-//     //handling
-//     //"remote"        : rhost+"interface_ui",
-//     //Note :: this is the fallback that gets created if we
-//     //Fail to create local DB
-//     //At some point, append username so we have it unique per user id
-//     "local_fallback": rhost+"local_user_interface_ui/",
-//     "sync" : {
-//         "from"  : false,
-//         "to"    : false
-//     },
-//     polling:1500
-// };
 //Define Data DB ( Replicate with filter at some point, keeping it full both ways for now )
 databases.datadb = {
     "name": "data",
@@ -62,45 +46,37 @@ var log = function(txt, severity) {
             "text": txt,
             severity: severity
         });
-
-        // if(txt.indexOf("_local") >= 0)
-        //     return;
-        // if ( !isUndefinedOrNull(severity) && severity > 0 ) {
-        //     appendChildNodes(currentDocument().body, DIV({style:{"font-weight":"normal", "color":"#961247"}}, txt));
-        // }
-        // else if ( !isUndefinedOrNull(severity) && severity < 0 ) {
-        //     appendChildNodes(currentDocument().body, DIV({style:{"font-weight":"normal", "color":"#038024"}}, txt));
-        // }
-        // else {
-        //     appendChildNodes(currentDocument().body, txt, BR());
-        // }
-    }
-    //log = noop;
+    }    //log = noop;
+var logDiv = null;
 var log2 = function(txt, severity) {
+        if(window.PINPOINT !== "ALL" && txt.indexOf(window.PINPOINT) == -1) return;
+        var appendTo = isUndefinedOrNull(logDiv) ? currentDocument().body : logDiv;
 
         if(txt.indexOf("_local") >= 0) return;
 
         if(!isUndefinedOrNull(severity) && severity > 0) {
-            appendChildNodes(currentDocument().body, DIV({
+            appendChildNodes(appendTo, DIV({
                 style: {
                     "font-weight": "normal",
                     "color": "#961247"
                 }
             }, txt));
         } else if(!isUndefinedOrNull(severity) && severity < 0) {
-            appendChildNodes(currentDocument().body, DIV({
+            appendChildNodes(appendTo, DIV({
                 style: {
                     "font-weight": "normal",
                     "color": "#038024"
                 }
             }, txt));
         } else {
-            appendChildNodes(currentDocument().body, txt, BR());
+            appendChildNodes(appendTo, txt, BR());
         }
     }
 var paper = null;
 
 var init = function() {
+        logDiv = DIV({"style":{"border":"solid red 0px", "height":"100%", "width":"100%"}});
+        appendChildNodes(currentDocument().body, logDiv);
         //Capture replication info ( we have only one at start: interfacedb)
         window.CAPTURE_REPLICATION = true;
         //progress bar
@@ -109,7 +85,8 @@ var init = function() {
         bar.init();
         bar.listenTo("interface.replication.pending", {
             "x": "total_completed",
-            "max": "total_to_complete"
+            "max": "total_to_complete",
+            "remaining": "remaining"
         });
 
         log2("Creating all databases");
@@ -150,7 +127,7 @@ var init = function() {
                         });
                     } catch(e) {
                         log2("Database could not be created :: " + db.local_fallback, 1);
-                        log(serializeJSON(e));
+                        log2(serializeJSON(e));
                         //In this case, we go on anyhow
                         //eve("database.created", {"error":err, "database":database});
                         throw(e);
@@ -201,8 +178,11 @@ waitForEvents(["database.ready.interfacedb", "database.ready.datadb"]).addCallba
     eve("interface.replication.pending", {
         "pending": 0,
         "total_completed": 100,
-        "total_to_complete": 100
+        "total_to_complete": 100,
+        "remaining": []
     });
+    
+    if(!window.LOG_INFO_REPLICATION) removeElement(logDiv);
 
     // log2("Checking all_docs");
     // databases["interfacedb"].database.allDocs(function(err, docs){
@@ -392,12 +372,19 @@ eve.on("interface.request.*", function() {
     //have one
     var f = function(err, doc) {
             if(!isUndefinedOrNull(err)) {
-                log("Error getting interface object: " + cls + ", resubmitting");
-                log("ERROR: " + serializeJSON(err));
+                log2("Error getting interface object: " + cls + ", resubmitting");
+                log2("ERROR: " + serializeJSON(err));
                 eve("buffered.1000." + event, req);
             } else {
                 var o = reviveJSON(evalJSON(serializeJSON(doc)));
+                //Keeping o.name for retro-compatibility
+                //Remove as soon as possible
                 o.name = req.id;
+                
+                var oo = $.extend(true, {}, req);
+                delete oo["id"];
+                //mutate o to accept all settings put in req
+                update(o, oo);
 
                 o.init && o.init();
                 //log("Found: " + cls + " rev: " + o._rev);
