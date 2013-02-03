@@ -522,7 +522,7 @@ if (typeof module !== 'undefined' && module.exports) {
   // Tree = [Key, Tree]
 
   var stem = function(revtree, depth){
-    var wTree = JSON.parse(JSON.stringify(revtree));
+    var wTree = $.extend(true, [], revtree);
     var resTree = [];
     wTree.map(function(tree){
       var all = bfs({node:tree.ids, depth:1}, allNodes);
@@ -547,15 +547,24 @@ if (typeof module !== 'undefined' && module.exports) {
   Pouch.merge = function(metadata, path, depth){
     var conflicts = false;
 
-    metadata = JSON.parse(JSON.stringify(metadata));
-    path = JSON.parse(JSON.stringify(path));
+    if(window.LOG_INFO_REPLICATION) log2("Entering merge for: " + metadata.id);
+
+    metadata = $.extend(true, {}, metadata);
+    path = $.extend(true, {}, path);
+
+    if(window.LOG_INFO_REPLICATION) log2("Pre pinpoint for: " + metadata.id);
 
     //log("PATH : " + metadata.id + " :: " + serializeJSON(path));
     //log(" :: TO :: "+ metadata.id + " :: ");
     //log("META : " + metadata.id + " :: "+ serializeJSON(metadata));
     //Get all metadata nodes
     var metaNodes = [];
+    if(window.LOG_INFO_REPLICATION && ( window.PINPOINT == "ALL" || window.PINPOINT == metadata.id)) 
+      log2("metadata is: " + metadata.rev );
+
+
     metadata.rev_tree.map(function(tree){
+
         bfs({node:tree.ids, depth:1}, allNodes)
             .map(function(node){
                 metaNodes.push(node);
@@ -568,7 +577,7 @@ if (typeof module !== 'undefined' && module.exports) {
       .map(function(node){
         to_place.unshift(node);
       });
-
+    
     while(to_place.length > 0){
       var node = to_place.pop();
       //log( "SIZE: " +to_place.length+ " :: Placing: " + node.node[0]);
@@ -611,7 +620,7 @@ if (typeof module !== 'undefined' && module.exports) {
           metaNodes.push({depth:n1.depth+1, node:n1.node[1][n1.node[1].length-1], parent:n1, isLeaf: node.node[1].length == 0 });
           //log("Adding " + node.node[0] + " as child of parent: " + n1.node[0]);
           if(node.node[1].length>0) {
-            conflicts = 'new_branch';
+            conflicts = 'new_leaf';
           }
           else{
             conflicts = conflicts || 'new_leaf';
@@ -627,19 +636,20 @@ if (typeof module !== 'undefined' && module.exports) {
           //log("Storing: " + JSON.stringify({depth:1, node: metadata.rev_tree[metadata.rev_tree.length-1].ids, parent:null, isLeaf: node.node[1].length == 0 }));
           //log("Adding a new tree: " + node.node[0]);
           if(node.node[1].length>0) {
-            conflicts = 'new_branch';
+            conflicts = 'new_leaf';
           }
           else{
             if(metadata.rev_tree.length == 1){
               conflicts = conflicts || 'new_leaf';
             }
             else {
-              conflicts = "new_branch";
+              conflicts = "new_leaf";
             }
           }
         }
       }
     }
+    if(window.LOG_INFO_REPLICATION) log2("Pre stem for: " + metadata.id);
     
     metadata.rev_tree = stem(metadata.rev_tree, depth);
     //log("MERGE RESULT: " + metadata.id + " :: "+ JSON.stringify(metadata) + " :: conflicts: " + conflicts)
@@ -675,15 +685,12 @@ if(typeof module !== 'undefined' && module.exports) {
       };
 
       function isCompleted() {
-        if(window.LOG_INFO_REPLICATION) {
-          log2("PROGRESS: " + pending + " :: " + total_completed + " / " + total_to_complete);
-          log2("rev buffer: " + JSON.stringify(revs_remaining));
-        }
         if(window.CAPTURE_REPLICATION) {
           eve("interface.replication.pending", {
             "pending": pending,
             "total_completed": total_completed,
-            "total_to_complete": total_to_complete
+            "total_to_complete": total_to_complete,
+            "remaining": revs_remaining
           });
         }
         if(completed && pending === 0 && total_to_complete == total_completed) {
@@ -732,7 +739,7 @@ if(typeof module !== 'undefined' && module.exports) {
           diff[change.id] = change.changes.map(function(x) {
             return x.rev;
           });
-          //log2("Changes: " + JSON.stringify(diff));
+          if(window.LOG_INFO_REPLICATION) log2("Changes: " + JSON.stringify(diff));
           target.revsDiff(diff, function(err, diffs) {
             if(Object.keys(diffs).length === 0) {
               //log2("No diffs");
@@ -766,11 +773,11 @@ if(typeof module !== 'undefined' && module.exports) {
                     total_completed++;
                     if(window.LOG_INFO_REPLICATION) log2("Processed: " + being_fetched);
                     revs_remaining = filter(function(r) {
-                      return r != being_fetched
+                      return r != being_fetched;
                     }, revs_remaining);
                     //log2("Post bulk for: " + JSON.stringify(doc));
                     if(err) {
-                      //log2("Error bulk: " + JSON.stringify(err));
+                      if(window.LOG_FAILED_REPLICATION) log2("Error bulk: " + JSON.stringify(err));
                       //log2("Doc was: " + JSON.stringify(being_processed));
                       //This happens when change occurs on target originating from src
                       //and a from replication captures it
@@ -790,7 +797,7 @@ if(typeof module !== 'undefined' && module.exports) {
                       //Process response
                       docs.forEach(function(doc) {
                         //We consider conflicts innocuous ?
-                        //if("error" in doc) //log2("Error in doc: "+ JSON.stringify(doc));
+                        if("error" in doc) log2("Error in doc: "+ being_fetched +JSON.stringify(doc), 1);
                         if(doc && "error" in doc && doc["error"] != "conflict") {
                           in_error = true;
                           result.ok = false;
@@ -1040,7 +1047,7 @@ var parseDoc = function(doc, newEdits) {
     }
   } else {
     if (doc._revisions) {
-      var tmp_ids = JSON.parse(JSON.stringify(doc._revisions.ids));
+      var tmp_ids = $.extend(true, [], doc._revisions.ids);
       doc._rev_tree = [{
         pos: doc._revisions.start - doc._revisions.ids.length + 1,
         ids: tmp_ids.reduce(function(acc, x) {
@@ -1171,7 +1178,7 @@ var filterChange = function(opts) {
 
 //limit concurrent requests
 if(!window.AJAX_CONCURRENT_REQUEST_LIMIT)
-  window.AJAX_CONCURRENT_REQUEST_LIMIT=10000;
+  window.AJAX_CONCURRENT_REQUEST_LIMIT=100;
 window.AJAX_CURRENT_OPEN_REQUESTS=0;
 
 window.AJAX_QUEUE = [];
@@ -1335,17 +1342,17 @@ var localJSON = (function(){
   };
 })();
 
-// btoa and atob don't exist in node. see https://developer.mozilla.org/en-US/docs/DOM/window.btoa
-if (typeof btoa === 'undefined') {
-  btoa = function(str) {
-    return new Buffer(unescape(encodeURIComponent(str)), 'binary').toString('base64');
-  }
-}
-if (typeof atob === 'undefined') {
-  atob = function(str) {
-    return decodeURIComponent(escape(new Buffer(str, 'base64').toString('binary')));
-  }
-}
+// // btoa and atob don't exist in node. see https://developer.mozilla.org/en-US/docs/DOM/window.btoa
+// if (typeof btoa === 'undefined') {
+//   btoa = function(str) {
+//     return new Buffer(unescape(encodeURIComponent(str)), 'binary').toString('base64');
+//   }
+// }
+// if (typeof atob === 'undefined') {
+//   atob = function(str) {
+//     return decodeURIComponent(escape(new Buffer(str, 'base64').toString('binary')));
+//   }
+// }
 
 if (typeof module !== 'undefined' && module.exports) {
   // use node.js's crypto library instead of the Crypto object created by deps/uuid.js
@@ -2229,7 +2236,7 @@ var IdbPouch = function(opts, callback) {
       }
 
       var newEdits = 'new_edits' in opts ? opts.new_edits : true;
-      var userDocs = JSON.parse(JSON.stringify(req.docs));
+      var userDocs = $.extend(true, [], req.docs);
 
       // Parse the docs, give them a sequence number for the result
       var docInfos = userDocs.map(function(doc, i) {
@@ -2270,12 +2277,16 @@ var IdbPouch = function(opts, callback) {
           return complete();
         }
         var currentDoc = docs.shift();
+        if(window.LOG_INFO_REPLICATION) log2("Bulking: " + currentDoc.metadata.id + " :: " + currentDoc.metadata.rev + " :: " + JSON.stringify(currentDoc.metadata.deletions) + " :: " + currentDoc.metadata.deleted);
         var req = txn.objectStore(DOC_STORE).get(currentDoc.metadata.id);
         req.onsuccess = function process_docRead(event) {
+
           var oldDoc = event.target.result;
           if(!oldDoc) {
+            if(window.LOG_INFO_REPLICATION) log2("Inserting: " + currentDoc.metadata.id + " :: " + currentDoc.metadata.rev);
             insertDoc(currentDoc);
           } else {
+            if(window.LOG_INFO_REPLICATION) log2("Updating: " + currentDoc.metadata.id + " :: " + currentDoc.metadata.rev);
             updateDoc(oldDoc, currentDoc);
           }
         }
@@ -2320,12 +2331,20 @@ var IdbPouch = function(opts, callback) {
         var err = null;
         var recv = 0;
 
-        docInfo.data._id = docInfo.metadata.id;
-        docInfo.data._rev = docInfo.metadata.rev;
+        //Setting _id and _rev on data if missing
+        docInfo.data._id  = docInfo.data._id  || docInfo.metadata.id;
+        docInfo.data._rev = docInfo.data._rev || docInfo.metadata.rev;
 
         if(isDeleted(docInfo.metadata, docInfo.metadata.rev)) {
           docInfo.data._deleted = true;
         }
+
+        var tdsp = $.extend(true, {}, docInfo);
+        try {
+          delete tdsp.data.init;
+          delete tdsp.metadata.revisions;
+        } catch(e) {}
+        if(window.LOG_INFO_REPLICATION) log2("writeDoc: " + serializeJSON(tdsp), 1);
 
         var attachments = docInfo.data._attachments ? Object.keys(docInfo.data._attachments) : [];
         for(var key in docInfo.data._attachments) {
@@ -2361,6 +2380,8 @@ var IdbPouch = function(opts, callback) {
 
         function finish() {
           docInfo.data._id_rev = docInfo.data._id + "::" + docInfo.data._rev;
+          if(window.LOG_INFO_REPLICATION && (window.PINPOINT == "ALL" || window.PINPOINT == docInfo.data._id)) log2("Checking pre finish: " + docInfo.metadata.id + "-" + docInfo.metadata.rev + " vs " + docInfo.data._id_rev );
+
           var dataReq = txn.objectStore(BY_SEQ_STORE).put(docInfo.data);
           dataReq.onsuccess = function(e) {
             console.info(name + ': Wrote Document ', docInfo.metadata.id);
@@ -2369,25 +2390,40 @@ var IdbPouch = function(opts, callback) {
             delete docInfo.metadata.rev;
             var metaDataReq = txn.objectStore(DOC_STORE).put(docInfo.metadata);
             metaDataReq.onsuccess = function() {
+              if(window.LOG_INFO_REPLICATION) log2("Stored meta: " + docInfo.metadata.id + " :: " + winningRev(docInfo.metadata));
               results.push(docInfo);
               call(callback);
             };
+            metaDataReq.onerror = function(){
+              if(window.LOG_INFO_REPLICATION) log2("Something went wrrong when storing metadata", 1);
+            }
           };
           dataReq.onerror = function(e){
-            if(window.LOG_INFO_REPLICATION) log2("Error storing: " + JSON.stringify(docInfo))
+            if(window.LOG_INFO_REPLICATION) log2("Error storing: " + docInfo.data._id_rev);
           }
         }
       }
 
       function updateDoc(oldDoc, docInfo) {
+        if(window.LOG_INFO_REPLICATION) log2("Pre Merge: " + docInfo.metadata.id + " :: new_edits: " + newEdits + " ::ref:: " + winningRev(oldDoc));
+
         var merged = Pouch.merge(oldDoc, docInfo.metadata.rev_tree[0], 1000);
-        var inConflict = (oldDoc.deleted && docInfo.metadata.deleted) || (!oldDoc.deleted && newEdits && merged.conflicts !== 'new_leaf');
+
+        var inConflict = (oldDoc.deleted && docInfo.metadata.deleted && newEdits) || (!oldDoc.deleted && newEdits && merged.conflicts !== 'new_leaf');
+
+        if(window.LOG_INFO_REPLICATION) log2("Conflict check: " + docInfo.metadata.id + " :: " + (oldDoc.deleted && docInfo.metadata.deleted ) + " :: " + (!oldDoc.deleted && newEdits && merged.conflicts !== 'new_leaf'),-1);
+        if(window.LOG_INFO_REPLICATION) log2("Post Merge: " + docInfo.metadata.id + " :: " + JSON.stringify(docInfo.deletions) + ' :: ' + inConflict + " :: " + merged.conflicts);
 
         if(inConflict) {
           results.push(makeErr(Pouch.Errors.REV_CONFLICT, docInfo._bulk_seq));
           return processDocs();
         }
-        oldDoc.deletions && (docInfo.metadata.deletions = oldDoc.deletions);
+        if(!docInfo.metadata.deletions) docInfo.metadata.deletions = {};
+        if(oldDoc.deletions){
+          for(var r in oldDoc.deletions){
+            docInfo.metadata.deletions[r] = true;
+          }
+        }
         if(docInfo.metadata.deleted) {
           if(!('deletions' in docInfo.metadata)) {
             docInfo.metadata.deletions = {};
@@ -2396,6 +2432,23 @@ var IdbPouch = function(opts, callback) {
         }
 
         docInfo.metadata.rev_tree = merged.metadata.rev_tree;
+        merged = null;
+
+        //Setting info for data and actual rev
+        docInfo.data._id = docInfo.metadata.id;
+        docInfo.data._rev = docInfo.metadata.rev;
+        if(docInfo.data._rev.split("-")[1] in docInfo.metadata.deletions)
+          docInfo.data._deleted = true;
+
+        docInfo.metadata.rev = winningRev(docInfo.metadata);
+
+        //Check if I should be deleted or not
+        if(docInfo.metadata.rev.split("-")[1] in docInfo.metadata.deletions)
+          docInfo.metadata.deleted = true;
+
+        if(docInfo.metadata.deleted && !(docInfo.metadata.rev.split("-")[1] in docInfo.metadata.deletions))
+          delete docInfo.metadata.deleted;
+
         //docInfo.metadata.rev = winningRev(docInfo.metadata);
         writeDoc(docInfo, processDocs);
       }
@@ -2462,6 +2515,8 @@ var IdbPouch = function(opts, callback) {
     // current revision(s) from the by sequence store
     api.get = function idb_get(id, opts, callback) {
 
+      if(window.LOG_INFO_REPLICATION) log2("Trying to get: " + id);
+
       if(typeof opts === 'function') {
         callback = opts;
         opts = {};
@@ -2482,14 +2537,20 @@ var IdbPouch = function(opts, callback) {
           return call(callback, Pouch.Errors.MISSING_DOC);
         }
         var rev = winningRev(metadata);
+
+        if(window.LOG_INFO_REPLICATION) log2("GET result: " + metadata.id + " :: " + rev, 1);
+
         var key = opts.rev ? opts.rev : rev;
         key = metadata.id + "::" + key;
+
         var index = txn.objectStore(BY_SEQ_STORE).index('_id_rev');
 
         index.get(key).onsuccess = function(e) {
           var doc = e.target.result;
           //Remove local key _id_rev
           if(doc && doc._id_rev) delete(doc._id_rev)
+          //Check if we're OK
+          if(window.LOG_INFO_REPLICATION) log2("GET Doc: " + doc._id_rev + " :: ");
           if(opts.revs) {
             var node = findRev(metadata, doc._rev.split('-')[0], doc._rev.split('-')[1]);
             var revisions2 = {
@@ -2633,7 +2694,7 @@ var IdbPouch = function(opts, callback) {
         opts = {};
       }
       opts.was_delete = true;
-      var newDoc = JSON.parse(JSON.stringify(doc));
+      var newDoc = $.extend(true, {}, doc);
       newDoc._deleted = true;
       return api.bulkDocs({
         docs: [newDoc]
@@ -3356,7 +3417,7 @@ var webSqlPouch = function(opts, callback) {
     }
 
     var newEdits = 'new_edits' in opts ? opts.new_edits : true;
-    var userDocs = JSON.parse(JSON.stringify(req.docs));
+    var userDocs = $.extend(true, [], req.docs);
 
     // Parse the docs, give them a sequence number for the result
     var docInfos = userDocs.map(function(doc, i) {
@@ -3646,7 +3707,7 @@ var webSqlPouch = function(opts, callback) {
       opts = {};
     }
     opts.was_delete = true;
-    var newDoc = JSON.parse(JSON.stringify(doc));
+    var newDoc = $.extend(true, {}, doc);
     newDoc._deleted = true;
     return api.bulkDocs({docs: [newDoc]}, opts, yankError(callback));
   };
