@@ -9,7 +9,7 @@ sync capabilities. This allows for radical approach to user interfaces, developm
 For the time being the interface is composed of:
  - A code editor allowing online/offline modification of the interface objects, regenerating the frontend in real time.
  - Widgets controling the connection to the remote DBs, and therefore choose if work is performed locally 
-or synchronised directly to the server whenever you are online.
+or synchronized directly to the server whenever you are online.
 
 
 The goal is to provide the community with a robust interface along with a component repository that can be used by 
