@@ -87,6 +87,6 @@ If you want to have your own server you will need to replicate the following cou
  - remote sandbox for ie to simulate local: https://xcayp.com/local_data
 Then go to: https://your.couchdb.database.com/interface/_design/interface/interface.html
 
-Note: couch databases should be behind https, otherwise you'll need to alter interface.js
+
 
 
