@@ -73,8 +73,6 @@ You can edit interface elements, create new ones ( just enter an id that doesn't
 Interface elements are called in main_interface object. Then eve.js is used to pass messages around.
 
 Have a look at main interface and layer to get a gist of how things are done.
-Dedicated webpage coming soon.
-
 
 
 Bring it on, I Couch like a pro
