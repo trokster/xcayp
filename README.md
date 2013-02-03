@@ -81,7 +81,7 @@ Bring it on, I Couch like a pro
 -------------------------------
 
 If you want to have your own server you will need to replicate the following couchdb databases:
- - Interface DB for replication https://xcayp.cloudant.com/interface
+ - Interface DB for replication https://xcayp.com/interface
  - Data DB for replication https://xcayp.com/data
  - remote sandbox for ie to simulate local: https://xcayp.com/local_interface
  - remote sandbox for ie to simulate local: https://xcayp.com/local_data
