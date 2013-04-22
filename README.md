@@ -63,6 +63,10 @@ Click to play at:
 
 https://xcayp.com
 
+Development version is here:
+
+https://dev01.xcayp.com
+
 
 
 OK it works, what next ?
