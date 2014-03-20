@@ -1,0 +1,18 @@
+CACHE MANIFEST
+#VERSION 27.20
+CACHE:
+MochiKit.js
+raphael.min.js
+interface.js
+pouchdb-nightly.js
+codemirror.css
+cobalt.css
+simple-hint.css
+base64.js
+xlsx.js
+jszip.js
+shim.js
+NETWORK:
+/
+https://www.gravatar.com/avatar/
+https://api.github.com/
