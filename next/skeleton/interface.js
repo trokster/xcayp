@@ -94,7 +94,10 @@ var init = function(){
     }
 
     //Otherwise, we launch main
-    if (fragment.length) log2("Fragment was not recognized or empty");
+    if (fragment.length) {
+        log2("Fragment was not recognized or empty");
+    }
+    log2("Triggering main");
     init_main(null);
 }
 

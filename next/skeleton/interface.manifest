@@ -8,10 +8,6 @@ pouchdb-nightly.js
 codemirror.css
 cobalt.css
 simple-hint.css
-base64.js
-xlsx.js
-jszip.js
-shim.js
 NETWORK:
 /
 https://www.gravatar.com/avatar/
