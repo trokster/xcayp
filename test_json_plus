@@ -1,0 +1,8 @@
+{
+  "name": "test_file",
+  "method": function(param){
+    console.log(param);
+  },
+  "prop1": "prop1",
+  "prop2": [1,2,3,"prop2"]
+}
