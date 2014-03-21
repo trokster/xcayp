@@ -1,0 +1,6 @@
+{
+  "mixins": {
+    "version"  : "0.01",
+    "resource" : "next/modules/mixins.json"
+  }
+}
