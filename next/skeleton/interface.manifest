@@ -2,6 +2,7 @@ CACHE MANIFEST
 #VERSION 27.20
 CACHE:
 MochiKit.js
+raphcomo.js
 raphael.min.js
 interface.js
 pouchdb-nightly.js

@@ -24,6 +24,31 @@ var localJSON = (function(){
   };
 })();
 
+var log2 = function(txt, severity) {
+    if(window.PINPOINT !== "ALL" && txt.indexOf(window.PINPOINT) == -1) return;
+    var appendTo = isUndefinedOrNull(logDiv) ? currentDocument().body : logDiv;
+
+    if(txt.indexOf("_local") >= 0) return;
+
+    if(!isUndefinedOrNull(severity) && severity > 0) {
+        appendChildNodes(appendTo, DIV({
+            style: {
+                "font-weight": "normal",
+                "color": "#961247"
+            }
+        }, txt));
+    } else if(!isUndefinedOrNull(severity) && severity < 0) {
+        appendChildNodes(appendTo, DIV({
+            style: {
+                "font-weight": "normal",
+                "color": "#038024"
+            }
+        }, txt));
+    } else {
+        appendChildNodes(appendTo, txt, BR());
+    }
+};
+
 //Disable console for i.e.
 if(!window.console || !console) {
     window.console = console = {};
@@ -884,5 +909,294 @@ eve.on("database.init", function(){
         }
     }
 });
+
+var login = function(params){
+
+    var login = {};
+
+    login.init = function(){
+        var self = this;
+
+        if(!isUndefinedOrNull(getElement("login_container"))) {
+            console.log("Another login window is already open, cancelling.");
+            return;
+        }
+
+        login.container = DIV({"id":"login_container"});
+
+        setStyle(self.container, {
+            "position":"absolute",
+            "border": "solid red 0px"
+        });
+        makePositioned(self.container);
+
+        appendChildNodes(currentDocument().body, self.container);
+
+        self.min_width = 300;
+        self.max_width = 400;
+        self.min_height= 180;
+
+        login.paper_container = DIV({});
+        appendChildNodes(login.container, login.paper_container);
+        setStyle(login.paper_container, {width:"100%", height:"100%"});
+
+        self.paper = Raphael(login.paper_container);
+        self.background = self.paper.rect(0,0,50,50, 8).attr({
+            "fill":"30-#061A30-#345985", 
+            "stroke":"none",
+            "stroke-width":4
+        });
+
+        self.username = self.paper.text(0, 0, "Username");
+        self.password = self.paper.text(0, 0, "Password");
+
+        self.title = self.paper.text(0,0,"Welcome to\n" + rhost);
+
+        self.status = self.paper.text(0,0, (!isUndefinedOrNull(params) && params.status) ? params.status : "Awaiting login...");
+
+        map(function(item) {
+          item.attr({
+            "fill": "white",
+              "stroke-width": .5,
+              "stroke": "white",
+              "stroke-opacity": .2,
+              "font-size": 12,
+              "font-family": "Arial, Helvetica, sans-serif",
+              "fill-opacity": .8,
+              "font-weight": "bold"
+          });
+        }, [self.username, self.password, self.title, self.status]);
+        self.status.attr({
+            "font-size":9,
+            "font-weight": "normal"
+        });
+
+
+        self.username_input = INPUT();
+        self.password_input = INPUT({
+          "type": "password"
+        });
+
+        var handleInputChange = function(){
+            var usr = self.username_input.value;
+            var pwd = self.password_input.value;
+
+            if(isUndefinedOrNull(usr) || usr == ""){
+                msg = "Please enter user name.";
+                self.username_input.focus();
+            }
+            else if(isUndefinedOrNull(pwd) || pwd == ""){
+                self.password_input.focus();
+                msg = "Please enter password."
+            }
+            else {
+                msg = "Hello "+usr+",\nChecking your credentials...";
+                window.credentials = {
+                    user    : usr,
+                    password: pwd
+                };
+                eve("buffered.500.application.login.validate");
+                callLater(.5, self.destroy);
+            }
+
+            self.status.attr(
+                {"text":msg
+            });
+
+        };
+
+        connect(self.username_input, "onchange", handleInputChange);
+        connect(self.password_input, "onchange", handleInputChange);
+        connect(self.password_input, "onblur", handleInputChange);
+        connect(self.password_input, "onpaste", handleInputChange);
+
+
+        map(function(item) {
+          appendChildNodes(self.container, item);
+          setStyle(item, {
+            "position": "absolute",
+              "border": "solid red 0px"
+          });
+          makePositioned(item);
+        }, [self.username_input, self.password_input]);
+
+        self.background.attr({"fill-opacity":.001});
+        self.background.animate({"fill-opacity":1}, 500);
+
+        self.resize();
+        self.username_input.focus();
+
+        return login;
+    }
+
+    login.resize = function(){
+        var self = this;
+        var d = getViewportDimensions();
+
+        log2("OK positioning");
+        //Try to position login window correctly
+        //1:3 left, 1:5 top
+        self.width  = ( d.w / 3 ) > self.min_width ? d.w/3 : self.min_width;
+        self.width  = self.width  < self.max_width ? self.width : self.max_width;
+
+        self.height = self.width * self.min_height / self.min_width;
+
+        setElementDimensions(self.container, {w:self.width, h:self.height});
+        self.paper.setSize(self.width, self.height);
+
+        self.x = (d.w - self.width)/2 ;
+        self.y = (d.h - self.height)/4 ;
+
+        if(self.x < 0) self.x = 0;
+        if(self.y < 0) self.y = 0;
+
+        setElementPosition(self.container, {x:self.x, y:self.y});
+        self.background.attr({width:self.width, height:self.height});
+
+        self.title.attr({
+            "x": self.width / 2,
+            "y": self.height * .2
+        });
+
+        self.username.attr({
+            "text-anchor": "start",
+            "x": self.width * .1,
+            "y": self.height * .5
+        });
+
+        var bb = self.username.getBBox();
+        self.password.attr({
+            "text-anchor": "start",
+            "x": bb.x,
+            "y": bb.y2 + bb.height + 5
+        });
+        var pp = self.password.getBBox();
+        setElementPosition(self.username_input, {
+            x: pp.x2 + 10,
+            y: bb.y - 2
+        });
+        setElementPosition(self.password_input, {
+            x: pp.x2 + 10,
+            y: pp.y - 2
+        });
+        map(function(item) {
+            setElementDimensions(item, {
+                w: self.width * .5,
+                h: 15
+                });
+        }, [self.username_input, self.password_input]);
+
+        self.status.attr({x:self.width/2, y:self.height*.85});
+
+    }
+
+    login.destroy = function(){
+
+        var self = this;
+
+        disconnectAll(self.username_input);
+        disconnectAll(self.password_input);
+
+        eve.off("window.resize", self.resize);
+        self.paper.remove();
+        self.paper = null;
+        removeElement(self.container);
+        self.container = null;
+
+        return;
+
+    };
+
+
+    bindMethods(login);
+    eve.on("window.resize", login.resize);
+
+    return login.init();
+}
+
+eve.on("application.login.request", login);
+
+
+//TODO -> store one cred per host
+eve.on("application.login.validate", function(){
+
+    log2("Validating credentials.");
+    //Check if credentials stored locally
+
+    if(isUndefinedOrNull(window.credentials)){
+        var creds = localJSON.get("credentials");
+
+        if(isUndefinedOrNull(creds)){
+            eve("buffered.500.application.login.request");
+            return;
+        }
+        else {
+            window.credentials = {};
+            window.credentials.user     = creds.user;
+            window.credentials.password = creds.password;
+        }
+    }
+
+    console.log("Trying to authenticate to DB");
+    //Now we have credentials, try to authenticate
+    var db = PouchDB(
+        rhost.split("://")[0] + "://" 
+        + PouchDB.utils.Crypto.MD5(window.credentials.user) + ":" 
+        + window.credentials.password + "@" + rhost.split("://")[1] + "_users", 
+        function(err, db) {
+
+            if(!isUndefinedOrNull(err)){
+                if(err.message && err.message == "Name or password is incorrect."){
+                    eve("application.login.destroy");
+                    eve("application.login.request", null, {
+                        "status": err.message
+                    });
+                }
+                else {
+                    console.log("Couldn't login to DB, assuming we're cut off from network.")
+                    console.log("Err: " + JSON.stringify(err));
+                    console.log("Try again in 5 secs.")                    
+
+                    localJSON.set("credentials", {
+                        "user"      : window.credentials.user,
+                        "password"  : window.credentials.password
+                    });
+
+                    eve("buffered.5000.application.login.validate");
+                }
+            }
+            else {
+                console.log("Pulling org.couchdb.user:"+PouchDB.utils.Crypto.MD5(window.credentials.user));
+                db.get("org.couchdb.user:" + PouchDB.utils.Crypto.MD5(window.credentials.user), function(err, res){
+
+                    if(!isUndefinedOrNull(err)){
+                        console.log("Error getting user info: " + JSON.stringify(err));
+                    }
+                    else {
+                        console.log("Got result: " + JSON.stringify(res));
+                        localJSON.set("credentials", {
+                            "user"      : window.credentials.user,
+                            "password"  : window.credentials.password,
+                            "response"  : res
+                        });
+
+                        log2("User authenticated: " + window.credentials.user, -1);
+
+                        eve("application.login.success");
+
+                    }
+                });
+            }
+
+        });
+    });
+
+eve.on("application.login.destroy", function(){
+    delete(window.credentials);
+    localJSON.remove("credentials");
+});
+
+
+
 
 

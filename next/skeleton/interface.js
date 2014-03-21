@@ -16,30 +16,6 @@ var log = function(txt, severity) {
         });
     } //log = noop;
 var logDiv = null;
-var log2 = function(txt, severity) {
-        if(window.PINPOINT !== "ALL" && txt.indexOf(window.PINPOINT) == -1) return;
-        var appendTo = isUndefinedOrNull(logDiv) ? currentDocument().body : logDiv;
-
-        if(txt.indexOf("_local") >= 0) return;
-
-        if(!isUndefinedOrNull(severity) && severity > 0) {
-            appendChildNodes(appendTo, DIV({
-                style: {
-                    "font-weight": "normal",
-                    "color": "#961247"
-                }
-            }, txt));
-        } else if(!isUndefinedOrNull(severity) && severity < 0) {
-            appendChildNodes(appendTo, DIV({
-                style: {
-                    "font-weight": "normal",
-                    "color": "#038024"
-                }
-            }, txt));
-        } else {
-            appendChildNodes(appendTo, txt, BR());
-        }
-    }
 
 //Done defining logging
 var init = function(){
@@ -49,6 +25,7 @@ var init = function(){
     eve.on("*", function(){
         if(eve.nt().substring( 0, 9) == "buffered.") return;
         if(eve.nt().substring( 0, 8) == "delayed.") return;
+        if(eve.nt().substring( 0, 8) == "raphael.") return;
 
         log2("EVENT: " + eve.nt());
     });
@@ -85,9 +62,11 @@ var init = function(){
         else if(env == "main"){
             return init_main(fragment);
         }
+        /*
         else if(env == "stage"){
             return init_stage(fragment);
         }
+        */
         else if(env == "setup"){
             return init_setup(fragment);
         }
@@ -163,95 +142,26 @@ var init_dev = function(fragment){
         polling: 1500
     };
 
-    //We also need the dev and stage interface databases
-
-    databases.stage_interfacedb = {
-        "name"  : "stage_interface",
-        "local" : "stage_interface-" + rhost,
-        "remote": rhost + "stage_interface/",
-        "filter_to": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "filter_from": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "sync": {
-            "from": true,
-            "to": false
-        },
-        polling: 1500
-    };
-
-    //Putting this in comments for now, as we may have one per user
-    /*
-    //Declare databases
-    databases.dev_interfacedb = {
-        "name"  : "dev_interface",
-        "local" : "dev_interface-" + rhost,
-        "remote": rhost + "dev_interface/",
-        "filter_to": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "filter_from": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "sync": {
-            "from": true,
-            "to": true
-        },
-        polling: 1500
-    };
-    */
+    eve("application.login.validate");
 
     //Launch init on all databases
     log2("Creating all databases");
     map(function(db) {
         eve("database.init."+db);
     }, keys(databases));
+}
 
+//SETUP interface
+var init_setup = function(){
+    log2("Considering we're on a virgin database");
+    eve("application.login.validate");
+
+    eve.once("application.login.success", function(){
+        log2("Login success, checking catalog.", 1);
+    });
 
 }
 
-//STAGE interface
-var init_stage = function(fragment){
-    log2("Setting up STAGE environment");
 
-    //Declare databases ( Here we work with stage database )
-    databases.interfacedb = {
-        "name"  : "stage_interface",
-        "local" : "stage_interface-" + rhost,
-        "remote": rhost + "stage_interface/",
-        "filter_to": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "filter_from": function(doc, req){
-            if(doc && doc._id == "_design/interface") return false;
-            if(doc && doc._id.substr(0,7) == "_local/") return false;
-            return true;
-        },
-        "sync": {
-            "from": true,
-            "to": false
-        },
-        polling: 1500
-    };
-
-    //Launch init on all databases
-    log2("Creating all databases");
-    map(function(db) {
-        eve("database.init."+db);
-    }, keys(databases));
-
-}
 
 eve.on("raphael.DOMload", init)(-100);
