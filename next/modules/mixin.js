@@ -1,4 +1,6 @@
 {
+  "version": "0.1",
+  "description": "Class mixins<br>Allows 'interface'<br>definitions... Please note this is not a real mixin implmentation, as it works only in the context of this... mess.",
   "handlesTranslation": function(o) {
     if (window.mixins.initializeMixin(o, "handlesTranslation")) return;
     //Handle touch event
@@ -28,7 +30,7 @@
     o.respawn_props.push("handleTranslation");
 
   },
-    "handlesDrag": function(o) {
+  "handlesDrag": function(o) {
     if (window.mixins.initializeMixin(o, "handlesDrag")) return;
     //Handle touch event
     //We need dimensions/x/y for this one
@@ -76,7 +78,7 @@
     o.respawn_props.push("handleDrag");
 
   },
-    "handlesTap": function(o) {
+  "handlesTap": function(o) {
     if (window.mixins.initializeMixin(o, "handlesTap")) return;
     //Handle touch event
     //We need dimensions/x/y for this one
@@ -772,7 +774,6 @@
 
 
   },
-    "description": "Class mixins<br>Allows 'interface'<br>definitions... Please note this is not a real mixin implmentation, as it works only in the context of this... mess.",
     "init": function() {
     var old_mixins = window.mixins;
     window.PHI = (1 + Math.sqrt(5)) / 2;
@@ -1152,5 +1153,5 @@
       }
     });
   },
-    "_id": "mixin",
+    "_id": "mixin"
 }
