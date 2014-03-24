@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "_id": "mixin"  "version": "0.1",
   "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
     as it works only in the context of this... mess.",
@@ -1154,6 +1154,5 @@
         });
       }
     });
-  },
-    "_id": "mixin"
+  }
 }
