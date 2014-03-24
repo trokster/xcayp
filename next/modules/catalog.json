@@ -1,6 +1,6 @@
 {
-  "mixins": {
+  "mixin": {
     "version"  : "0.01",
-    "resource" : "https://api.github.com/repos/trokster/xcayp/contents/next/modules/mixins.json"
+    "resource" : "https://api.github.com/repos/trokster/xcayp/contents/next/modules/mixin.json"
   }
 }
