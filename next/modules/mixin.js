@@ -1,6 +1,8 @@
 {
-  "version": "0.1",
-  "description": "Class mixins<br>Allows 'interface'<br>definitions... Please note this is not a real mixin implmentation, as it works only in the context of this... mess.",
+  "_id": "mixin"  "version": "0.1",
+  "description": "Class mixins \
+    Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
+    as it works only in the context of this... mess.",
   "handlesTranslation": function(o) {
     if (window.mixins.initializeMixin(o, "handlesTranslation")) return;
     //Handle touch event
@@ -1152,6 +1154,5 @@
         });
       }
     });
-  },
-    "_id": "mixin"
+  }
 }
