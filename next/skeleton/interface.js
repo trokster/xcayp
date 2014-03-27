@@ -1,12 +1,8 @@
 var rhost = (window.location + "").split("://")[0] + "://" + window.location.hostname + ":" + window.location.port + "/";
-window.LOG_INFO_REPLICATION = false;
-window.AJAX_CONCURRENT_REQUEST_LIMIT = 200;
-window.INITIAL_LOG_LENGTH = 5;
-window.PINPOINT = "ALL";
+
 window.LOG_FAILED_REPLICATION = true;
-
 window.INTERFACE_OBJECT_REFERENCE = {};
-
+window.PINPOINT = "ALL";
 
 //Logging functions
 var log = function(txt, severity) {
@@ -88,7 +84,7 @@ var init_main = function(fragment){
     databases.interfacedb = {
         "name"  : "core_interface",
         "local" : "core_interface-" + rhost,
-        "remote": rhost + "core_interface/",
+        "remote": checkIfRewrite(rhost) + "test_db/",
         "filter_to": function(doc, req){
             if(doc && doc._id == "_design/interface") return false;
             if(doc && doc._id.substr(0,7) == "_local/") return false;
@@ -100,16 +96,23 @@ var init_main = function(fragment){
             return true;
         },
         "sync": {
-            "from": true,
-            "to": false
+            "from"  : true,
+            "to"    : true
         },
-        polling: 1500
+        polling: 5000
     };
-
     //Launch init on all databases
     log2("Creating all databases");
     map(function(db) {
+        console.log("Registering: " + "database.created."+db);
+        eve.once("database.created."+db, function(){
+
+            console.log("Created, launching sync: " + "database.request.sync."+db)
+
+            eve("database.request.sync."+db);
+        });
         eve("database.init."+db);
+
     }, keys(databases));
 
 
@@ -148,20 +151,35 @@ var init_dev = function(fragment){
     log2("Creating all databases");
     map(function(db) {
         eve("database.init."+db);
+        eve.once("database.created."+db, function(){
+            eve("database.request.sync")
+        });
     }, keys(databases));
 }
 
 //SETUP interface
 var init_setup = function(){
     log2("Considering we're on a virgin database");
+    //Validate credentials
+    //opens login if no credentials are found on machine
+    //or if credentials do not have admin rights on DB server
     eve("application.login.validate");
 
-    eve.once("application.login.success", function(){
-        log2("Login success, checking catalog.", 1);
-    });
+    var checkSetup = function(){
+        var creds = localJSON.get(rhost+"-credentials");
+
+        if(creds.response && MochiKit.Base.findValue(creds.response.roles, "admin") != -1){
+            eve("application.fetch.catalog");
+        }
+        else {
+            eve("application.login.request", null, {"status": "User: " + window.credentials.user + " does not have admin priviledges.\nLogged out."});
+            eve("application.login.destroy");
+            eve.once("application.login.success", checkSetup);
+        }
+    };
+
+    eve.once("application.login.success", checkSetup);
 
 }
-
-
 
 eve.on("raphael.DOMload", init)(-100);
