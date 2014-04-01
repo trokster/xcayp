@@ -136,7 +136,7 @@
 
       } else {
 
-        var initial_coords = Pouch.extend(true, {}, self.pointers[id]);
+        var initial_coords = PouchDB.utils.extend(true, {}, self.pointers[id]);
 
         //Trigger drag listener
         self.Touches.drag = callLater(LONG_INTERVAL_LIMIT / 1000, function() {
@@ -163,7 +163,7 @@
       //Or if big movement occured from start
       //If no central_multipoint, create a new one
       if (isUndefinedOrNull(self.Touches.multipoint_init)) {
-        self.Touches.multipoint_init = Pouch.extend(true, {}, self.pointers);
+        self.Touches.multipoint_init = PouchDB.utils..extend(true, {}, self.pointers);
       } else {
         //Is init_multipoint still valid ?
         var initial_points_moved = false,
@@ -192,13 +192,13 @@
 
         if (initial_points_invalid) {
           //re-initialize with current pointers
-          self.Touches.multipoint_init = Pouch.extend(true, {}, self.pointers);
+          self.Touches.multipoint_init = PouchDB.utils.extend(true, {}, self.pointers);
           self.Touches.multipoint_final = {};
         } else if (initial_points_moved) {
           //Points moved, keep initial points
         } else {
           //Points have not moved, re-initialize with current points
-          self.Touches.multipoint_init = Pouch.extend(true, {}, self.pointers);
+          self.Touches.multipoint_init = PouchDB.utils.extend(true, {}, self.pointers);
           self.Touches.multipoint_final = {};
         }
       }
@@ -217,7 +217,7 @@
       self.pointers[id].current.t = new Date().getTime();
 
       if (self.Touches.dragging) {
-        self.Touches.draginfo.current = Pouch.extend(true, {}, self.pointers[id].current);
+        self.Touches.draginfo.current = PouchDB.utils.extend(true, {}, self.pointers[id].current);
         self.Touches.draginfo.uuid = Raphael.createUUID();
         eve("interface.touch_events.drag.move", self.Touches.draginfo);
         return;
@@ -280,7 +280,7 @@
                 t: self.pointers[id].current.t,
                 uuid: uuid
               };
-              var taps = Pouch.extend(true, {}, self.Touches.taps);
+              var taps = PouchDB.utils.extend(true, {}, self.Touches.taps);
               self.Touches.tap = callLater(TAP_INTERVAL_LIMIT / 1000, function() {
                 eve("interface.touch_events.tap", taps);
                 delete(self.Touches.tap);
@@ -300,7 +300,7 @@
                       self.Touches.tap.cancel();
                       self.Touches.taps.taps++;
                       self.Touches.taps.t = self.pointers[id].current.t;
-                      var taps = Pouch.extend(true, {}, self.Touches.taps);
+                      var taps = PouchDB.utils.extend(true, {}, self.Touches.taps);
                       self.Touches.tap = callLater(TAP_INTERVAL_LIMIT / 1000, function() {
                         eve("interface.touch_events.tap", taps);
                         delete(self.Touches.tap);
@@ -314,7 +314,7 @@
                         t: self.pointers[id].current.t,
                         uuid: uuid
                       };
-                      var taps = Pouch.extend(true, {}, self.Touches.taps);
+                      var taps = PouchDB.utils.extend(true, {}, self.Touches.taps);
                       self.Touches.tap = callLater(TAP_INTERVAL_LIMIT / 1000, function() {
                         eve("interface.touch_events.tap", taps);
                         delete(self.Touches.tap);
@@ -350,7 +350,7 @@
       //console.log("TEST: " + JSON.stringify(self.Touches.multipoint_init) + " :: " + JSON.stringify(self.pointers[id]));
       if (!isUndefinedOrNull(self.Touches.multipoint_init[id]) && self.Touches.multipoint_init[id].uuid == self.pointers[id].uuid) {
         //console.log("Setting final");
-        self.Touches.multipoint_final[id] = Pouch.extend(true, {}, self.pointers[id]);
+        self.Touches.multipoint_final[id] = PouchDB.utils.extend(true, {}, self.pointers[id]);
       }
 
       //If only one pointer left, means gesture just ended, time to analyze it
@@ -467,7 +467,7 @@
       //console.log("Mouse wheel: " + this.direction)
       //log("Mouse wheel: " + this.direction);
 
-      var evt = Pouch.extend(true, {}, this);
+      var evt = PouchDB.utils.extend(true, {}, this);
       //Translate into taps 
       evt.taps = this.direction == "up" ? 2 : 3;
       evt.uuid = Raphael.createUUID();
@@ -476,7 +476,7 @@
     });
 
     self.handleEvent("interface.touch_events.scale", function() {
-      var evt = Pouch.extend(true, {}, this);
+      var evt = PouchDB.utils.extend(true, {}, this);
       //Translate into taps 
       evt.taps = this.ratio > 1 ? 2 : 3;
       evt.uuid = Raphael.createUUID();
