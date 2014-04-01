@@ -1,5 +1,6 @@
 {
-  "_id": "mixin"  "version": "0.1",
+  "version": "0.1",
+  "module_type":"core",
   "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
     as it works only in the context of this... mess.",
