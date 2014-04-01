@@ -1,5 +1,5 @@
 {
-  "module_type":"core",
+  "module_type" : "core",
   "init": function() {
 
     var TOLERANCE_X = 10,
@@ -163,7 +163,7 @@
       //Or if big movement occured from start
       //If no central_multipoint, create a new one
       if (isUndefinedOrNull(self.Touches.multipoint_init)) {
-        self.Touches.multipoint_init = PouchDB.utils..extend(true, {}, self.pointers);
+        self.Touches.multipoint_init = PouchDB.utils.extend(true, {}, self.pointers);
       } else {
         //Is init_multipoint still valid ?
         var initial_points_moved = false,
