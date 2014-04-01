@@ -37,7 +37,7 @@
             "stroke": "white"
         });
 
-        self.shapes.title = self.paper.print(0, 0, "XCAYP 0.2", self.paper.getFont("whoa"), 500).attr({
+        self.shapes.title = self.paper.print(0, 0, "XCAYP", self.paper.getFont("whoa"), 500).attr({
           fill: "30-#fff-yellow",
             "stroke": "gray",
             "stroke-width": 4
