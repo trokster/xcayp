@@ -87,7 +87,7 @@ var init = function(){
 //MAIN interface
 var init_main = function(fragment){
     log2("Setting up MAIN environment");
-
+    logDiv && removeElement(logDiv);
     //Declare databases
     databases.interfacedb = {
         "name"  : "core_interface",
