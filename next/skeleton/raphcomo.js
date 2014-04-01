@@ -1,3 +1,5 @@
+window.INTERFACE_OBJECT_REFERENCE = {};
+
 // Basic wrapper for localStorage
 var win = this;
 var localJSON = (function(){
@@ -33,6 +35,29 @@ var checkIfRewrite = function(url){
     }
 };
 
+window.wordwrap = function(text, lineWidth) {
+    var text = text,
+        i = lineWidth,
+        textLength = text.length,
+        editedText = text,
+        difference = 0;
+    if(lineWidth > 0) {
+        for(; i < textLength; i++) {
+            if(text.charAt(i) == " ") {
+                difference = editedText.length - textLength;
+                test = editedText.split("");
+                test.splice(i + difference, 0, "\n");
+                editedText = test.join("");
+                i += lineWidth;
+            }
+        }
+        return editedText;
+    } else {
+        return editedText;
+    }
+};
+
+var logDiv = null;
 var log2 = function(txt, severity) {
     if(window.PINPOINT !== "ALL" && txt.indexOf(window.PINPOINT) == -1) return;
     var appendTo = isUndefinedOrNull(logDiv) ? currentDocument().body : logDiv;
@@ -815,7 +840,7 @@ eve.on("database.login.request", function(database){
         var self = this;
 
         if(!isUndefinedOrNull(getElement("login_container"))) {
-            console.log("Another login window is already open, cancelling.");
+            //console.log("Another login window is already open, cancelling.");
             return;
         }
 
@@ -929,7 +954,6 @@ eve.on("database.login.request", function(database){
         var self = this;
         var d = getViewportDimensions();
 
-        log2("OK positioning");
         //Try to position login window correctly
         //1:3 left, 1:5 top
         self.width  = ( d.w / 3 ) > self.min_width ? d.w/3 : self.min_width;
@@ -1012,6 +1036,7 @@ eve.on("database.login.request", function(database){
 });
 
 //Sync handler
+//usage: eve("database.sync/changes.request.<database name>");
 (function(glob) {
     eve.on("database.request.*", function() {
 
@@ -1021,24 +1046,32 @@ eve.on("database.login.request", function(database){
         if(isUndefinedOrNull(databases[db].polling)) databases[db].polling = 1000;
         var polling = databases[db].polling;
 
-        log2("Received "+ type +" request for: " + db);
         opts = {};
 
         if(type == "sync") {
+
+            if(databases[db].sync_in_progress){
+                console.log("Sync request denied, one is already in progress.");
+                return;
+            }
+            else {
+                databases[db].sync_in_progress = true;
+            }
+
             //log(db + " :: received sync request");
             var waiter = new Deferred();
             var syncFrom = new Deferred();
             var syncTo = new Deferred();
             waiter.addCallbacks(function() {
                 if(databases[db].sync.from && !isUndefinedOrNull(databases[db].remote)) {
-                    log2("Starting sync", -1);
                     var onComplete = function(err, res) {
-                        log2("In onComplete ( FROM )");
                         if(!isUndefinedOrNull(err)) {
                             eve("database.sync.status." + db, {
                                 success: false,
                                 type: "from"
                             });
+                            console.log("In error, checking");
+                            console.log(err);
 
                             //Analyze if issue is due to auth
                             if(err.status == 500 && err.details && err.details.message && err.details.message == "You are not a db or server admin."){
@@ -1049,15 +1082,21 @@ eve.on("database.login.request", function(database){
 
                                 eve("database.login.request", null, databases[db]);
                             }
-
                             if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( FROM ) : " + db + " :: " + JSON.stringify(res));
                         } else {
+
+                            if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
+                            if(isUndefinedOrNull(databases[db].replications.from)) databases[db].replications.from = 0;
+                            databases[db].replications.from += 1;
+                            if(databases[db].replications.from == 1){
+                                eve("database.initial.replication.from."+db);
+                            }
+
                             eve("database.sync.status." + db, {
                                 success: true,
                                 type: "from"
                             });
                         }
-                        log2("SYNC FROM complete:: " + db, -1) ;
                         eve("database.response.sync.from." + db);
                         //eve("buffered."+databases[db].polling+".database.request.sync."+db);
                         return syncFrom.callback();
@@ -1065,20 +1104,19 @@ eve.on("database.login.request", function(database){
 
                     //Create database if it is not created yet
                     if(isUndefinedOrNull(databases[db].remotedb)){
-                        log2("Trying to create remote DB", -1);
                         var opts2 = {};
                         if(!isUndefinedOrNull(databases[db].auth))
                             opts2.auth = databases[db].auth;
                         PouchDB(databases[db].remote, opts2, function(err, remote_database){
-
+                            var opts3 = {complete:onComplete};
+                            if(databases[db].filter_from)
+                                opts3.filter = databases[db].filter_from;
                             if(isUndefinedOrNull(err)){
                                 databases[db].remotedb = remote_database;
-                                log2("Creation OK, launching sync from");
-                                databases[db].database.replicate.from(databases[db].remotedb, {complete:onComplete});
+                                databases[db].database.replicate.from(databases[db].remotedb, opts3);
                                 return;
                             }
                             else {
-                                log2("Handling error here: " + JSON.stringify(err) + " :: " + err);
 
                                 if(err.status == 404 || err.status == 401){
                                     //Means we could not create database, request admin credentials
@@ -1096,7 +1134,10 @@ eve.on("database.login.request", function(database){
                         });
                     }
                     else {
-                        databases[db].database.replicate.from(databases[db].remotedb, {complete:onComplete});
+                        var opts3 = {complete:onComplete};
+                        if(databases[db].filter_from)
+                            opts3.filter = databases[db].filter_from;
+                        databases[db].database.replicate.from(databases[db].remotedb, opts3);
                     }
                 } else {
                     //log("Returning blank sync from");
@@ -1106,9 +1147,8 @@ eve.on("database.login.request", function(database){
 
             syncFrom.addCallbacks(function() {
                 if(databases[db].sync.to && !isUndefinedOrNull(databases[db].remote)) {
-                    log2("DB :: " + db + " SYNC TO");
                     var onComplete = function(err, res) {
-                        log2("In onComplete ( TO )");
+
                         if(!isUndefinedOrNull(err)) {
                             eve("database.sync.status." + db, {
                                 success: false,
@@ -1123,21 +1163,28 @@ eve.on("database.login.request", function(database){
 
                                 eve("database.login.request", null, databases[db]);
                             }
-                            if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( TO ) : " + db + " :: " + err);
+                            if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
                         } else {
+
+                            if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
+                            if(isUndefinedOrNull(databases[db].replications.to)) databases[db].replications.to = 0;
+                            databases[db].replications.to += 1;
+
+                            if(databases[db].replications.to == 1){
+                                eve("database.initial.replication.to."+db);
+                            }
+
                             eve("database.sync.status." + db, {
                                 success: true,
                                 type: "to"
                             });
                         }
-                        log2("SYNC TO complete:: " + db) ;
                         eve("database.response.sync.to." + db);
                         //eve("buffered."+databases[db].polling+".database.request.sync."+db);
                         return syncTo.callback();
                     };
                     //Create database if it is not created yet
                     if(isUndefinedOrNull(databases[db].remotedb)){
-                        log2("Trying to create remote DB", -1);
                         var opts2 = {};
                         if(!isUndefinedOrNull(databases[db].auth))
                             opts2.auth = databases[db].auth;
@@ -1145,17 +1192,18 @@ eve.on("database.login.request", function(database){
 
                             if(isUndefinedOrNull(err)){
                                 databases[db].remotedb = remote_database;
-                                log2("Creation OK, launching sync to");
-                                databases[db].database.replicate.to(databases[db].remotedb, {complete:onComplete});
+                                var opts3 = {complete:onComplete};
+                                if(databases[db].filter_to)
+                                    opts3.filter = databases[db].filter_to;
+                                databases[db].database.replicate.to(databases[db].remotedb, opts3);
                             }
                             else {
-                                log2("Handling error here: " + JSON.stringify(err) + " :: " + err);
                                 if(err.status == 404 || err.status == 401){
                                     //Means we could not create database, request admin credentials
                                     eve("database.login.request", null, databases[db]);
                                 }
 
-                                if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( TO ) : " + db + " :: " + err);
+                                if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
 
                                 eve("database.sync.status." + db, {
                                     success: false,
@@ -1166,7 +1214,10 @@ eve.on("database.login.request", function(database){
                         });
                     }
                     else {
-                        databases[db].database.replicate.to(databases[db].remotedb, {complete:onComplete});
+                        var opts3 = {complete:onComplete};
+                        if(databases[db].filter_to)
+                            opts3.filter = databases[db].filter_to;
+                        databases[db].database.replicate.to(databases[db].remotedb, opts3);
                     }
                 } else {
                     //log("Returning blank sync to");
@@ -1174,11 +1225,11 @@ eve.on("database.login.request", function(database){
                 }
             });
             syncTo.addCallback(function() {
-                log2(db + " :: requesting sync", -1 );
                 eve("database.sync.status." + db, {
                     success: true,
                     type: "idle"
                 });
+                databases[db].sync_in_progress = false;
                 eve("buffered." + databases[db].polling + ".database.request.sync." + db);
             });
             waiter.callback();
@@ -1189,7 +1240,7 @@ eve.on("database.login.request", function(database){
                 "onChange": function(change) {
                     //Handle bug on last seq
                     //if(change.seq <= databases[db].last_seq) return;
-                    log("DB: " + db + " CHANGE: " + serializeJSON(change), -1);
+                    //log("DB: " + db + " CHANGE: " + serializeJSON(change), -1);
                     eve("buffered.100.database.change." + db + "." + change.id, change);
                     //We update the last seq
                     if(databases[db].last_seq < change.seq) databases[db].last_seq = change.seq;
@@ -1211,5 +1262,233 @@ eve.on("database.login.request", function(database){
     });
 })(this);
 
+eve.on("github.sync", function(params){
+    if(isUndefinedOrNull(params)){
+        params = {
+            "git" : "https://api.github.com/repos/trokster/xcayp/contents/next/modules/"
+        };
+    }
+});
 
 
+//The heart of the module skeleton
+eve.on("interface.request.*", function(callback) {
+    var req = this;
+    var cls = eve.nt().split(".")[2];
+    var event = eve.nt();
+
+    if(isUndefinedOrNull(this.id)){
+        alert("An interface.request was sent without an id, cancelling spawn");
+        return;
+    }
+
+    //We check if we have interface class in DB
+    //Otherwise, we keep requesting it until we
+    //have one
+    var f = function(err, doc) {
+            if(!isUndefinedOrNull(err)) {
+                console.log("Error getting interface object: " + cls + ", resubmitting");
+                console.log("ERROR: " + serializeJSON(err));
+                eve("delayed.1000." + event, req);
+            } else {
+                //var o = reviveJSON(evalJSON(serializeJSON(doc)));
+                var o = evalJSON(atob(doc.content.replace(/[\n\r]/g, '')));
+                //Keeping o.name for retro-compatibility
+                //Remove as soon as possible
+                //We check if mixins are required, and if mixins are ready ( in window )
+                if(!isUndefinedOrNull(o.mixins) && isUndefinedOrNull(window.mixins)) {
+                    console.log("Error instantiating interface object: " + cls + ", mixins not ready... Resubmitting");
+                    eve("delayed.100." + event, req);
+                    return;
+                }
+
+                o.name = req.id;
+
+                //Handle special case for postInits
+                var postInits = [];
+                if(o.postInits) {
+                    map(function(ini){postInits.push(ini);}, o.postInits)
+                }
+                if(req.postInits) {
+                    map(function(ini){postInits.push(ini);}, req.postInits);
+                }
+                req.postInits = postInits;
+
+                //Handling special cases for parent and children
+                //These are straight references that can loop, so we handle
+                //them differently
+                var transient_vars = {};
+                map(function(item) {
+                    if(!isUndefinedOrNull(req[item])) {
+                        transient_vars[item] = req[item];
+                        delete req[item];
+                    }
+                }, ["parent", "children"]);
+
+                var oo = PouchDB.utils.extend(true, {}, req);
+                update(oo, transient_vars);
+                delete transient_vars;
+
+                oo.id = cls + "." + req.id;
+                //mutate o to accept all settings put in req
+                //console.log("Mutate param: " + o.name + " :: " +JSON.stringify(req));
+                update(o, oo);
+                //console.log("Pre build: " + o.name + " :: " +JSON.stringify(oo));
+                if(o.mixins) {
+                    map(function(mix) {
+                        window.mixins[mix](o);
+                        bindMethods(o);
+                    }, o.mixins);
+                }
+                //A last bind for good measure
+                bindMethods(o);
+
+                //Run mixin inits
+                if(o.inits && o.inits.length) {
+                    map(function(ff) {
+                        ff.apply(o);
+                    }, o.inits);
+                }
+
+                o.init && o.init();
+
+                //Run mixin postInits
+                if(o.postInits && o.postInits.length) {
+                    map(function(ff) {
+                        ff.apply(o);
+                    }, o.postInits);
+                }
+
+                window.INTERFACE_OBJECT_REFERENCE["interface." + cls + "." + req.id] = o;
+                //log("Found: " + cls + " rev: " + o._rev);
+                eve("interface.response." + cls + "." + req.id, {
+                    "req": req,
+                    "obj": o
+                });
+
+                var dest = function() {
+                        var callback = this.callback;
+                        //Prevent multiple calls ( normally .once prevents this)
+                        if(o._destroyed) return;
+
+                        o._being_destroyed = true;
+                        var handleRemove = function(){
+                            //Prevent multiple calls ( normally .once prevents this)
+                            if(o._destroyed) return;
+
+                            o._destroyed = true;
+                            eve.off("interface." + cls + "." + req.id + ".*");
+                            //eve.off("interface.request_handle." + cls + "." + req.id);
+
+                            if(!isUndefinedOrNull(o.cleanup)) o.cleanup();
+                            if(!isUndefinedOrNull(o.cleanups)) {
+                                map(function(oc) {
+                                    oc.apply(o);
+                                }, o.cleanups)
+                            }
+                            //Callback if defined ( Handy in case you need the object to re-instantiate )
+                            if(!isUndefinedOrNull(callback)) callback();
+                            delete window.INTERFACE_OBJECT_REFERENCE["interface." + cls + "." + req.id];
+                            eve("delayed.0.interface.removed." + cls + "." + req.id);
+                        };
+                        if(o.implements && o.implements("isLockable")){
+                            o.lock.acquire().addCallback(function(){
+                                handleRemove();
+                                o.lock.release();
+                            });
+                        }
+                        else {
+                            handleRemove();
+                        }
+                    };
+                eve.once("interface.remove." + cls + "." + req.id, dest);
+                //log(cls+" Ready");
+                if(callback) callback(o);
+            }
+        };
+    databases.interfacedb.database.get(cls, f);
+
+});
+
+
+eve.on("interface.mixin.change", function() {
+    var to_be_respawned = {};
+    var to_check = clone(this.updated);
+    extend(to_check, this.deleted);
+    map(function(mix) {
+        map(function(idx) {
+            var o = window.INTERFACE_OBJECT_REFERENCE[idx];
+            if(isUndefinedOrNull(o.implemented_mixins)) return;
+            if(findValue(o.implemented_mixins, mix) != -1 && findValue(o.implemented_mixins, "canRespawn") != -1) {
+                to_be_respawned[idx.split(".")[1]] = true;
+            }
+        }, keys(window.INTERFACE_OBJECT_REFERENCE));
+    }, to_check);
+    log("Classes to be respawned: " + serializeJSON(keys(to_be_respawned)));
+    //Simulate database change to respawn component
+    map(function(item) {
+        eve("database.change.interfacedb." + item, {
+            "seq": "DUMMY",
+            changes: []
+        });
+    }, keys(to_be_respawned));
+})
+
+
+//Utility function
+//Pattern or parameters is of the form: button.button0 ( we dump the interface prefix )
+eve.on("interface.request_add_children", function(parent, children) {
+    if(!isArrayLike(children)) children = [children];
+
+    var waits = ["interface.response_handle." + parent];
+    eve("delayed.0.interface.request_handle." + parent)
+
+    map(function(c) {
+        waits.push("interface.response_handle." + c);
+        eve("delayed.0.interface.request_handle." + c);
+    }, children)
+
+    waitForEvents(waits).addCallback(function() {
+        map(function(c) {
+            window.INTERFACE_OBJECT_REFERENCE["interface." + parent].appendChildren(window.INTERFACE_OBJECT_REFERENCE["interface." + c]);
+        }, children);
+    });
+
+})
+eve.on("interface.request_remove_children", function(parent, children) {
+    if(!isArrayLike(children)) children = [children];
+
+    var waits = ["interface.response_handle." + parent];
+    eve("delayed.0.interface.request_handle." + parent)
+
+    map(function(c) {
+        waits.push("interface.response_handle." + c);
+        eve("delayed.0.interface.request_handle." + c);
+    }, children)
+
+    waitForEvents(waits).addCallback(function() {
+        map(function(c) {
+            window.INTERFACE_OBJECT_REFERENCE["interface." + parent].removeChildren(window.INTERFACE_OBJECT_REFERENCE["interface." + c]);
+        }, children);
+    });
+
+})
+
+
+eve.on("interface.request_handle.*", function() {
+
+    var evt = eve.nt();
+
+    var lcls = evt.split(".")[2];
+    var lname = evt.split(".")[3];
+
+    if(("interface." + lcls + "." + lname) in window.INTERFACE_OBJECT_REFERENCE) {
+        var o = window.INTERFACE_OBJECT_REFERENCE["interface." + lcls + "." + lname];
+        if(typeof(this) == 'function') this(o);
+        eve("delayed.0.interface.response_handle." + lcls + "." + lname, o);
+    } else {
+        //try{console.log("Received request for: " + cls + "."+ name+ " :: Not, found re-submitting")}catch(e){noop()}
+        eve("delayed.500." + evt, this);
+    }
+
+});

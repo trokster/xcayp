@@ -6868,8 +6868,8 @@ var INTERNAL = _dereq_('./INTERNAL');
 module.exports = reject;
 
 function reject(reason) {
-	var promise = new Promise(INTERNAL);
-	return promise.reject(reason);
+  var promise = new Promise(INTERNAL);
+  return promise.reject(reason);
 }
 },{"./INTERNAL":24,"./promise":29}],31:[function(_dereq_,module,exports){
 'use strict';
@@ -6961,11 +6961,11 @@ function drainQueue() {
     var i = 0,
         task,
         innerQueue = handlerQueue;
-	handlerQueue = [];
-	/*jslint boss: true */
-	while (task = innerQueue[i++]) {
-		task();
-	}
+  handlerQueue = [];
+  /*jslint boss: true */
+  while (task = innerQueue[i++]) {
+    task();
+  }
 }
 var nextTick;
 var i = -1;
