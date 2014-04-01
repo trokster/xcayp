@@ -348,7 +348,7 @@
         } else {
           self.is_visible = true;
           showElement(self.container);
-          var o = jsDump.parse(doc);
+          var o = atob(doc.content.replace(/[\n\r]/g, ''));
           self.editor.setValue(js_beautify(o));
           self.resize();
           self.database = param.database;
