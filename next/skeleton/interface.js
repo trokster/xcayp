@@ -124,20 +124,22 @@ var init_main = function(fragment){
 
     }, keys(databases));
 
-    eve("interface.request.logger", {id:"logger"}, function(o){
-        callLater(.5, log, "Main application launching", -1);
-        eve("interface.request.mixin", {"id":"mixin"}, function(o){
-            eve.on("database.change.interfacedb.mixin", function() {
-              eve("interface.remove.mixin.mixin", {
-                callback: function() {
-                  eve("interface.request.mixin", {
-                    "id": "mixin"
-                  });
-                }
+    eve("interface.request.logger", {id:"logger"});
+
+    eve("interface.request.mixin", {"id":"mixin"});
+    eve("interface.request_handle.mixin.mixin", function(o){
+        console.log("MIXIN READY :)");
+        eve.on("database.change.interfacedb.mixin", function() {
+          eve("interface.remove.mixin.mixin", {
+            callback: function() {
+              eve("interface.request.mixin", {
+                "id": "mixin"
               });
-            });
+            }
+          });
         });
-    }); 
+    });
+
     //Set styles
     eve("interface.request.styles", {
       id: "styles"
@@ -211,8 +213,8 @@ var init_setup = function(){
     log2("Considering we're on a virgin database");
 
     eve.once("application.setup.switch_to_main", function(){
-        window.location.href = window.location.href.split("#")[0]+"#main";
-        window.location.reload();
+        //window.location.href = window.location.href.split("#")[0]+"#main";
+        //window.location.reload();
     });
 
     //Declare databases
@@ -429,7 +431,12 @@ var init_setup = function(){
                                             });
 
                                         //Read content to add extra info
-                                        var o = evalJSON(atob(gitModule.content.replace(/[\n\r]/g, '')));
+                                        try{
+                                            var o = evalJSON(atob(gitModule.content.replace(/[\n\r]/g, '')));
+                                        } catch(e){
+                                            log2("Error reading git Source for: " + name);
+                                            throw(e);
+                                        }
 
 
                                         if(o.module_type) newDoc.module_type = ""+o.module_type;
