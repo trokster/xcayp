@@ -1,6 +1,6 @@
 {
   "mixins": ["isDisplayComponent", "hasPaper"],
-  "module_type":"core",
+  "module_type": "core",
     "init": function() {
 
     var self = this;
