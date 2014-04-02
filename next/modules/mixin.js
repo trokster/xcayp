@@ -611,7 +611,7 @@
 
         map(function(r) {
           o.respawn_props.push(r)
-        }, ["direction", "adamantium"]);
+        }, ["direction", "adamantium", "gutter", "interval"]);
       },
 
     });
