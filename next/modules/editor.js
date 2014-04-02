@@ -104,21 +104,23 @@
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
         
-      self.edited_document.content = editor.getValue();
       //Quick check to see if json is correct
       try {
+          console.log("Evaluating: " + editor.getValue())
           evalJSON(self.edited_document.content);
       }
       catch(e) {
           log("Save failed ( evalJSON )");
           console.log(e);
-          console.log(self.edited_document.content);
+          console.log(editor.getValue());
           return;
       }
-      self.edited_document = btoa(self.edited_document);
+      self.edited_document = btoa(editor.getValue());
       //log("Trying to save object");
       var f = function(err, response) {
         if (!isUndefinedOrNull(err)) {
+          console.log("Error in calling put: " + serializeJSON(err));
+          console.log(err);
           log("Error in calling put: " + serializeJSON(err));
           return;
         } else {
