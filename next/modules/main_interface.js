@@ -47,16 +47,6 @@
 
     eve("interface.request_handle.mixin.mixin", function(o){
 
-      eve("interface.request.editor_button", {
-        "id": "button_editor"
-      });
-      eve("interface.request_handle.fullscreen.fullscreen", function(o) {
-        if (screenfull.enabled) {
-          eve("interface.request.fullscreen_button", {
-            "id": "fullscreen_button"
-          });
-        }
-      });
       eve("interface.request.editor", {
         "id": "main_editor"
       });
