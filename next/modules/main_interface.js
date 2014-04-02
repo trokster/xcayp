@@ -26,6 +26,14 @@
       "id": "mixin"
     });
 
+    //Triple tap to call editor
+    eve.on("interface.touch_events.tap", function(evt){
+        if(this.taps == 4){
+            eve("interface.editor.main_editor.open", {database:"interfacedb", "document":"editor"});
+        }
+    });
+    
+
     eve.on("database.change.interfacedb.mixin", function() {
       eve("interface.remove.mixin.mixin", {
         callback: function() {
