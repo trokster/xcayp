@@ -1293,12 +1293,13 @@ eve.on("interface.request.*", function(callback) {
             } else {
                 //var o = reviveJSON(evalJSON(serializeJSON(doc)));
                 var o = evalJSON(atob(doc.content.replace(/[\n\r]/g, '')));
+                o._id = doc._id;
                 //Keeping o.name for retro-compatibility
                 //Remove as soon as possible
                 //We check if mixins are required, and if mixins are ready ( in window )
                 if(!isUndefinedOrNull(o.mixins) && isUndefinedOrNull(window.mixins)) {
                     console.log("Error instantiating interface object: " + cls + ", mixins not ready... Resubmitting");
-                    eve("delayed.100." + event, req);
+                    eve("delayed.500." + event, req);
                     return;
                 }
 

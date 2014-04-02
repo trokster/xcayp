@@ -5,16 +5,18 @@ window.PINPOINT = "ALL";
 
 //Logging functions
 var log = function(txt, severity) {
-        eve("interface.log", {
-            "text": txt,
-            severity: severity
-        });
-    } //log = noop;
+    eve("interface.log", {
+        "text": txt,
+        severity: severity
+    });
+} //log = noop;
+
 
 //Done defining logging
 var init = function(){
     logDiv = DIV({"style":{"border":"solid red 0px", "height":"100%", "width":"100%"}});
     appendChildNodes(currentDocument().body, logDiv);
+
     if(!window.PINPOINT) removeElement(logDiv);
 
     setStyle(currentDocument().body, {
@@ -124,81 +126,7 @@ var init_main = function(fragment){
 
     }, keys(databases));
 
-    eve("interface.request.logger", {id:"logger"});
-
-    eve("interface.request.mixin", {"id":"mixin"});
-    eve("interface.request_handle.mixin.mixin", function(o){
-        console.log("MIXIN READY :)");
-        eve.on("database.change.interfacedb.mixin", function() {
-          eve("interface.remove.mixin.mixin", {
-            callback: function() {
-              eve("interface.request.mixin", {
-                "id": "mixin"
-              });
-            }
-          });
-        });
-    });
-
-    //Set styles
-    eve("interface.request.styles", {
-      id: "styles"
-    });
-    //Adding layers
-    eve("interface.request.overlay", {
-      id: "overlay0"
-    });
-
-    eve("interface.request.overlay_paper", {
-      id: "overlay_paper0"
-    });
-
-    eve("interface.request_handle.overlay_paper.overlay_paper0", function(o) {
-      //Add main container to landscape
-      eve("interface.request.container.main_container", {
-        id: "main_container",
-          "direction": "y+",
-        width: 10,
-        height: 10,
-        gutter: 10,
-        interval: 5
-      });
-      eve("interface.request.container", {
-        id: "container0",
-          "direction": "y+",
-        width: 500,
-        height: 500,
-        order: 1,
-        interval: 0
-      });
-
-      eve("interface.request_handle.container.main_container", function(o) {
-        eve.on("window.resize", function() {
-          eve("interface.request_handle.container.main_container", function(oo) {
-            var d = getViewportDimensions();
-            oo.setDimensions(d.w, d.h);
-            oo.setPosition(0, 0);
-            eve("interface.layout_request_root.container.main_container");
-          });
-        });
-        eve("window.resize");
-      });
-
-      eve("interface.request.banner.header", {
-        id: "header",
-        params: {
-          "fontSize": 40
-        },
-        optimal_height: 50,
-        order: 0,
-        minimum_height: 100,
-        adamantium: true
-      });
-
-      eve("interface.request_add_children", null, "container.main_container", "banner.header");
-      eve("interface.request_add_children", null, "container.main_container", "container.container0");
-    });
-
+    eve("interface.request.main_interface", {"id":"main_interface"});
 }
 
 //DEV interface
@@ -318,6 +246,9 @@ var init_setup = function(){
             }
 
             var my_filter = function(doc, req){
+                if(doc._deleted){
+                    return true;
+                }
                 //If flagged as core
                 if (doc.module_type == "core") {
                 return true;
