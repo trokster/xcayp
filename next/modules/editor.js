@@ -104,7 +104,7 @@
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
         
-      self.edited_document.content = jsDump.parse(editor.getValue());
+      self.edited_document.content = editor.getValue();
       //Quick check to see if json is correct
       try {
           evalJSON(self.edited_document.content);
