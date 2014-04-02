@@ -104,7 +104,18 @@
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
         
-      self.edited_document.content = btoa(jsDump.parse(editor.getValue()));
+      self.edited_document.content = jsDump.parse(editor.getValue());
+      //Quick check to see if json is correct
+      try {
+          evalJSON(self.edited_document.content);
+      }
+      catch(e) {
+          log("Save failed ( evalJSON )");
+          console.log(e);
+          console.log(self.edited_document.content);
+          return;
+      }
+      self.edited_document = btoa(self.edited_document);
       //log("Trying to save object");
       var f = function(err, response) {
         if (!isUndefinedOrNull(err)) {
