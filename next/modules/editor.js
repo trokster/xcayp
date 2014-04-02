@@ -103,14 +103,9 @@
     // Inputs: NONE
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
+        
+      self.current_document.content = btoa(jsDump.parse(editor.getValue()));
       //log("Trying to save object");
-      try {
-        var o = evalJSON(serializeJSON(evalJSON(editor.getValue())));
-      } catch (e) {
-        alert("Error during serialization");
-        log("Error during serialization: " + serializeJSON(e));
-        return;
-      }
       var f = function(err, response) {
         if (!isUndefinedOrNull(err)) {
           log("Error in calling put: " + serializeJSON(err));
@@ -227,7 +222,7 @@
     hideElement(this.container);
     this.is_visible = false;
     //Connect dropdowns to change events
-    connect(dropdown_db, "onchange", function(e) {
+    connect(dropdown_db, "onchange", function(e) {e
       e.stop();
       var choice = e.src().options[e.src().selectedIndex].innerHTML;
       self.database = choice;
@@ -350,6 +345,10 @@
           showElement(self.container);
           var o = atob(doc.content.replace(/[\n\r]/g, ''));
           self.editor.setValue(js_beautify(o));
+
+          //Set edited document property
+          self.edited_document = PouchDB.utils.extend(null, {},doc);
+
           self.resize();
           self.database = param.database;
           self.document = param.document;
