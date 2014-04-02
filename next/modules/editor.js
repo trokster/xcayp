@@ -115,7 +115,7 @@
           console.log(editor.getValue());
           return;
       }
-      self.edited_document = btoa(editor.getValue());
+      self.edited_document.content = btoa(editor.getValue());
       //log("Trying to save object");
       var f = function(err, response) {
         if (!isUndefinedOrNull(err)) {
