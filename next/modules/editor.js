@@ -104,7 +104,7 @@
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
         
-      self.current_document.content = btoa(jsDump.parse(editor.getValue()));
+      self.edited_document.content = btoa(jsDump.parse(editor.getValue()));
       //log("Trying to save object");
       var f = function(err, response) {
         if (!isUndefinedOrNull(err)) {
@@ -122,7 +122,7 @@
           }
         }
       }
-      databases[self.database].database.put(o, f);
+      databases[self.database].database.put(self.edited_document, f);
     };
     // Get text from DB
     // Inputs: NONE
