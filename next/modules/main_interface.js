@@ -12,11 +12,6 @@
       "color": "#CBCFD4"
     });
 
-    //Reload in case main_interface changes
-    eve.once("database.change.interfacedb.main_interface", function() {
-      window.location.reload();
-    });
-
     //Instantiate mixins THEN all the rest
     //This allows us to declare some mixins
     //in the initial script, yet use them in
@@ -126,10 +121,11 @@
         eve("interface.request_add_children", null, "container.main_container", "banner.banner");
         eve("interface.request_add_children", null, "container.main_container", "container.container0");
   
-        //Requesting interface handler
-        eve("interface.request.interface_handler", {
-          id: "interface_handler"
+        //Reload in case main_interface changes
+        eve.once("database.change.interfacedb.main_interface", function() {
+          window.location.reload();
         });
+
       });
     });
   }
