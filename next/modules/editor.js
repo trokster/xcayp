@@ -107,7 +107,7 @@
       //Quick check to see if json is correct
       try {
           console.log("Evaluating: " + editor.getValue())
-          evalJSON(self.edited_document.content);
+          evalJSON(editor.getValue());
       }
       catch(e) {
           log("Save failed ( evalJSON )");
