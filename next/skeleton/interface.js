@@ -126,7 +126,10 @@ var init_main = function(fragment){
 
     }, keys(databases));
 
-    eve("interface.request.main_interface", {"id":"main_interface"});
+    eve.once("database.sync.status.interfacedb", function(){
+        //First sync status will be from ( success or fail, doesn't matter )
+        eve("interface.request.main_interface", {"id":"main_interface"});
+    });
 }
 
 //DEV interface
@@ -187,6 +190,11 @@ var init_setup = function(){
         },
         polling: 1500
     };
+
+    log2("Destroying local DBs", 1);
+    PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.interfacedb.local));
+    PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.repositorydb.local));
+
 
     //Launch init on all databases
     log2("Creating all databases");
@@ -423,7 +431,7 @@ var init_setup = function(){
     });
 
     eve.on("interface.create_core_database", function(){
-        PouchDB(checkIfRewrite(rhost) + "core_interface-"+appname+"/", {"auth":databases.repositorydb.auth}, function(err, database){
+        PouchDB(checkIfRewrite(rhost) + "core_interface-"+appname+"/", {"auth":databases.repositorydb.auth, auto_compaction:true}, function(err, database){
             if(!isUndefinedOrNull(err)){
                 console.log("Error creating Core DB, retrying in 5 seconds");
                 console.log(err);
@@ -475,7 +483,7 @@ var init_setup = function(){
                         log2("CORE DB :: _design object uploaded, validation function activated", -1);
 
                         //Now set up replicator
-                        PouchDB(rhost+"_replicator", {auth:databases.repositorydb.auth}, function(err, database){
+                        PouchDB(rhost+"_replicator", {auth:databases.repositorydb.auth, auto_compaction:true}, function(err, database){
                             if(!isUndefinedOrNull(err)){
                                 console.log("CORE DB :: Error setting up replicator, retrying whole process in 5 seconds");
                                 console.log(err);

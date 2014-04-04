@@ -824,7 +824,7 @@ eve.on("database.init", function(){
     var name = db;
     var db = databases[db];
 
-    db.database = new PouchDB(PouchDB.utils.Crypto.MD5(db.local));
+    db.database = new PouchDB(PouchDB.utils.Crypto.MD5(db.local, {auto_compaction:true}));
     db.remotedb = null;
 
     eve("database.created."+name);
@@ -848,7 +848,8 @@ eve.on("database.login.request", function(database){
 
         setStyle(self.container, {
             "position":"absolute",
-            "border": "solid red 0px"
+            "border": "solid red 0px",
+            "zIndex": 100001
         });
 
         makePositioned(self.container);
@@ -1083,6 +1084,8 @@ eve.on("database.login.request", function(database){
                                 eve("database.login.request", null, databases[db]);
                             }
                             if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( FROM ) : " + db + " :: " + JSON.stringify(res));
+                            if(window.LOG_FAILED_REPLICATION) console.log(err);
+                            if(window.LOG_FAILED_REPLICATION) console.log(res)
                         } else {
 
                             if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
@@ -1104,7 +1107,7 @@ eve.on("database.login.request", function(database){
 
                     //Create database if it is not created yet
                     if(isUndefinedOrNull(databases[db].remotedb)){
-                        var opts2 = {};
+                        var opts2 = {auto_compaction:true};
                         if(!isUndefinedOrNull(databases[db].auth))
                             opts2.auth = databases[db].auth;
                         PouchDB(databases[db].remote, opts2, function(err, remote_database){
@@ -1124,6 +1127,8 @@ eve.on("database.login.request", function(database){
                                 }
 
                                 if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( FROM ) : " + db + " :: " + err);
+                                if(window.LOG_FAILED_REPLICATION) console.log(err);
+                                if(window.LOG_FAILED_REPLICATION) console.log(res)
 
                                 eve("database.sync.status." + db, {
                                     success: false,
@@ -1163,7 +1168,14 @@ eve.on("database.login.request", function(database){
 
                                 eve("database.login.request", null, databases[db]);
                             }
+                            //Silly message specific to validate_update_doc
+                            if(err.status == 500 && err.details && isArrayLike(err.details) && err.details[0].reason == "Only database admin can write here, seriously :)."){
+
+                                eve("database.login.request", null, databases[db]);
+                            }
                             if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
+                            if(window.LOG_FAILED_REPLICATION) console.log(err);
+                            if(window.LOG_FAILED_REPLICATION) console.log(res)
                         } else {
 
                             if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
@@ -1185,7 +1197,7 @@ eve.on("database.login.request", function(database){
                     };
                     //Create database if it is not created yet
                     if(isUndefinedOrNull(databases[db].remotedb)){
-                        var opts2 = {};
+                        var opts2 = {auto_compaction:true};
                         if(!isUndefinedOrNull(databases[db].auth))
                             opts2.auth = databases[db].auth;
                         PouchDB(databases[db].remote, opts2, function(err, remote_database){
@@ -1204,6 +1216,8 @@ eve.on("database.login.request", function(database){
                                 }
 
                                 if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
+                                if(window.LOG_FAILED_REPLICATION) console.log(err);
+                                if(window.LOG_FAILED_REPLICATION) console.log(res)
 
                                 eve("database.sync.status." + db, {
                                     success: false,

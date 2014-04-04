@@ -10,6 +10,9 @@ codemirror.css
 cobalt.css
 simple-hint.css
 jss.js
+codemirror.js
+javascript.js
+javascript-hint.js
 NETWORK:
 /
 *
