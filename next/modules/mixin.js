@@ -1,10 +1,10 @@
 {
-  "version": "0.1",
-  "module_type":"core",
-  "description": "Class mixins \
+  "version": "0.2",
+    "module_type": "core",
+    "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
     as it works only in the context of this... mess.",
-  "handlesTranslation": function(o) {
+    "handlesTranslation": function(o) {
     if (window.mixins.initializeMixin(o, "handlesTranslation")) return;
     //Handle touch event
     //We need dimensions/x/y for this one
@@ -33,7 +33,7 @@
     o.respawn_props.push("handleTranslation");
 
   },
-  "handlesDrag": function(o) {
+    "handlesDrag": function(o) {
     if (window.mixins.initializeMixin(o, "handlesDrag")) return;
     //Handle touch event
     //We need dimensions/x/y for this one
@@ -81,7 +81,7 @@
     o.respawn_props.push("handleDrag");
 
   },
-  "handlesTap": function(o) {
+    "handlesTap": function(o) {
     if (window.mixins.initializeMixin(o, "handlesTap")) return;
     //Handle touch event
     //We need dimensions/x/y for this one
@@ -117,9 +117,15 @@
       paper: null,
       border: 0,
       raphAnimDelay: PHI * 1000 / 2,
-      raphAnimType: "bounce",
+      raphAnimType: ">>",
       shapes: {},
-      params: {}
+      params: {},
+      getPaper: function(callback) {
+        eve("interface.request_handle.overlay_paper.overlay_paper0", function(oo) {
+          //console.log("In handle request: " + oo.paper);
+          callback.apply(o, [oo.paper]);
+        });
+      }
     });
 
     //Init phase
@@ -132,6 +138,7 @@
       });
     }
 
+
     o.handleEvent("interface.hide_request." + o._id + "." + o.name, function() {
       if (isUndefinedOrNull(o.disappear)) {
         map(function(s) {
@@ -139,13 +146,14 @@
             "fill-opacity": 0,
               "stroke-opacity": 0
           }, o.raphAnimDelay, "smooth", function() {
-            //console.log("Post disappear anim: " + o.id + " :: " + o.can_be_displayed);
             if (o.can_be_displayed) {
               o.shapes[s].attr({
                 "fill-opacity": 1,
                   "stroke-opacity": 1
               });
               o.shapes[s].show();
+            } else {
+              o.shapes[s].hide();
             }
           });
         }, keys(o.shapes));
@@ -278,18 +286,11 @@
               }, self.children));
             }
 
-            //map(function(c) {
-            //  self.optimal_width += c.optimal_width;
-            //  self.optimal_height += c.optimal_height;
-            //}, self.children);
-
           }
           if (!isUndefinedOrNull(self.parent)) {
-            //console.log(self.parent.name + " :: child setting _dirty to true");
             self.parent._dirty = true;
           }
           self._dirty = false;
-          //console.log("Recalculating minimas: " + self.name + " :: " + JSON.stringify([self.minimum_width, self.minimum_height]));
         }
         //If we are not root parent, we pass it to parent
         if (!isUndefinedOrNull(self.parent)) {
@@ -307,7 +308,6 @@
       },
       doLayout: function() {
         //Lock self
-        //console.log(self.name + " :: layout in progress");
         eve("interface.minimas_change", self);
         var d = self.lock.acquire();
         d.addCallback(function() {
@@ -324,6 +324,8 @@
 
           var sum_minimum_width = 0;
           var sum_minimum_height = 0;
+
+          //console.log(self._id + "." + self.name + " Starting layout: " + self.interval);
 
           //Sort children by priority ( shouldn't have to )
           self.children = sorted(self.children, function(a, b) {
@@ -344,12 +346,21 @@
               //If breadth first, try to stack as much as possible in the first level
               //Then hide what we can't
               if (self.direction == "x+") {
+                /*console.log(c.name + " :: iteration: " + JSON.stringify({
+                  i: i,
+                  self_width: self.width,
+                  self_gutter: self.gutter,
+                  self_interval: self.interval,
+                  first_calc: (sum_minimum_width + c.minimum_width) + " :: " + (self.width - self.gutter * 2 - i * self.interval),
+                  second_calc: c.minimum_height + " :: " + (self.height - self.gutter * 2 - self.interval * i)
+                }));*/
                 if (
-                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
                   }
+                  //console.log(c.name + " :: can be displayed");
                   sum_optimal_width += c.optimal_width;
                   sum_optimal_height += c.optimal_height;
 
@@ -359,6 +370,7 @@
                   nb_can_be_displayed += 1;
                   clist.push(c);
                 } else {
+                  //console.log(c.name + " :: can't be displayed");
                   //Hide those children that can't be displayed
                   for (var j = i; j < self.children.length; j++) {
                     self.hidden_children++;
@@ -373,7 +385,7 @@
                 }
               } else if (self.direction == "y+") {
                 if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
@@ -404,7 +416,7 @@
               //If depth first, we go deep first and check children minimas
               if (self.direction == "x+") {
                 if (
-                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
@@ -432,7 +444,7 @@
                 }
               } else if (self.direction == "y+") {
                 if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
@@ -460,9 +472,6 @@
                 }
               }
             }
-
-
-
           }
 
           //Compute dimensions
@@ -528,7 +537,6 @@
                 if (c.width < c.minimum_width) c.width = c.minimum_width;
                 total_width += c.width;
 
-                //console.log(self.name + " :: Testing: " + total_width + " / " + remaining_width);
                 if (total_width > full_width) {
                   remaining_width = (remaining_width + remaining_width - total_width);
                   dimensions_not_ok = true;
