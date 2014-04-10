@@ -1,5 +1,5 @@
 {
-  "version": "0.2",
+  "version": "0.22",
     "module_type": "core",
     "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
@@ -121,6 +121,8 @@
       shapes: {},
       params: {},
       getPaper: function(callback) {
+        if(this.paper) return callback.apply(o, [this.paper]);
+        
         eve("interface.request_handle.overlay_paper.overlay_paper0", function(oo) {
           //console.log("In handle request: " + oo.paper);
           callback.apply(o, [oo.paper]);
@@ -197,6 +199,7 @@
 
     o.respawn_props.push("paper");
     o.respawn_props.push("border");
+    o.respawn_props.push("params");
   },
     "isContainer": function(o) {
     if (window.mixins.initializeMixin(o, "isContainer")) return;
@@ -1140,6 +1143,9 @@
         if (this.implemented_mixins.indexOf(mixin) != -1) {
           return true;
         }
+      },
+      log: function(msg){
+        console.log(o._id + "." + o.name + " :: " + msg);
       }
     })
     //Ensure respawn_props is within
