@@ -111,6 +111,30 @@ var init_main = function(fragment){
         },
         polling: 20000
     };
+
+    //Declare databases
+    databases.userdb = {
+        "name"  : "userdb",
+        "local" : "user_generic-" + rhost,
+        "remote": checkIfRewrite(rhost)  + "userdb_"+appname+"_"+appname+"_generic",
+        "filter_to": function(doc, req){
+            if(doc && doc._id.substr(0,7) == "_design") return false;
+            if(doc && doc._id.substr(0,7) == "_local/") return false;
+            return true;
+        },
+        "filter_from": function(doc, req){
+            if(doc && doc._id.substr(0,7) == "_design") return false;
+            if(doc && doc._id.substr(0,7) == "_local/") return false;
+            return true;
+        },
+        "sync": {
+            "from"  : true,
+            "to"    : true
+        },
+        polling: 1500
+    };
+
+
     //Launch init on all databases
     log2("Creating all databases");
     map(function(db) {

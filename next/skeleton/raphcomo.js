@@ -60,6 +60,8 @@ window.wordwrap = function(text, lineWidth) {
 var logDiv = null;
 var log2 = function(txt, severity) {
     if(window.PINPOINT !== "ALL" && txt.indexOf(window.PINPOINT) == -1) return;
+    if(isUndefinedOrNull(logDiv)) return;
+
     var appendTo = isUndefinedOrNull(logDiv) ? currentDocument().body : logDiv;
 
     if(txt.indexOf("_local") >= 0) return;
@@ -833,7 +835,7 @@ eve.on("database.init", function(){
 
 //Login handler :: requires a database meta object as parameter ( example: databases.interfacedb )
 //usage: eve("database.login.request", null, databases.interfacedb);
-eve.on("database.login.request", function(database){
+eve.on("database.login.request", function(database, custom){
     var login = {};
 
     login.init = function(){
@@ -874,7 +876,12 @@ eve.on("database.login.request", function(database){
         self.username = self.paper.text(0, 0, "Username");
         self.password = self.paper.text(0, 0, "Password");
 
-        self.title = self.paper.text(0,0,"Please login to\n" + database.remote);
+        if(self.custom) {
+            self.title = self.paper.text(0,0,"Please login" + ( custom.remote ? " to\n" + custom.remote : "" ));
+        }
+        else {
+            self.title = self.paper.text(0,0,"Please login to\n" + database.remote);
+        }
 
         self.status = self.paper.text(0,0, "Awaiting login...");
 
@@ -917,8 +924,19 @@ eve.on("database.login.request", function(database){
             else {
                 msg = "Hello "+usr+",\nChecking your credentials...";
 
-                database.remotedb = null;
-                database.auth = PouchDB.utils.extend(true, {}, {"username":usr, "password":pwd});
+                if(!custom){
+
+                    database.remotedb = null;
+                    database.auth = PouchDB.utils.extend(true, {}, {"username":usr, "password":pwd});
+                }
+                else {
+                    database.database = null;
+                    database.auth = PouchDB.utils.extend(true, {}, {"username":usr, "password":pwd});
+                    database.local = usr + " :: " + rhost;
+                    database.remote = "userdb_"+appname+"_generic";
+
+                    eve("application.user_validate");
+                }
 
                 callLater(.5, self.destroy);
             }
