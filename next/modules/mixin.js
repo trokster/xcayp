@@ -1,5 +1,5 @@
 {
-  "version": "0.22",
+  "version": "0.23",
     "module_type": "core",
     "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
@@ -117,16 +117,18 @@
       paper: null,
       border: 0,
       raphAnimDelay: PHI * 1000 / 2,
-      raphAnimType: ">>",
+      raphAnimType: "bounce",
       shapes: {},
       params: {},
       getPaper: function(callback) {
-        if(this.paper) return callback.apply(o, [this.paper]);
-        
-        eve("interface.request_handle.overlay_paper.overlay_paper0", function(oo) {
-          //console.log("In handle request: " + oo.paper);
-          callback.apply(o, [oo.paper]);
-        });
+        if (isUndefinedOrNull(this.paper)) {
+          eve("interface.request_handle.overlay_paper.overlay_paper0", function(oo) {
+            o.paper = oo.paper;
+            callback(oo.paper);
+          });
+        } else {
+          callback(o.paper);
+        }
       }
     });
 
@@ -140,7 +142,6 @@
       });
     }
 
-
     o.handleEvent("interface.hide_request." + o._id + "." + o.name, function() {
       if (isUndefinedOrNull(o.disappear)) {
         map(function(s) {
@@ -148,6 +149,7 @@
             "fill-opacity": 0,
               "stroke-opacity": 0
           }, o.raphAnimDelay, "smooth", function() {
+            //console.log("Post disappear anim: " + o.id + " :: " + o.can_be_displayed);
             if (o.can_be_displayed) {
               o.shapes[s].attr({
                 "fill-opacity": 1,
@@ -199,7 +201,6 @@
 
     o.respawn_props.push("paper");
     o.respawn_props.push("border");
-    o.respawn_props.push("params");
   },
     "isContainer": function(o) {
     if (window.mixins.initializeMixin(o, "isContainer")) return;
@@ -328,8 +329,6 @@
           var sum_minimum_width = 0;
           var sum_minimum_height = 0;
 
-          //console.log(self._id + "." + self.name + " Starting layout: " + self.interval);
-
           //Sort children by priority ( shouldn't have to )
           self.children = sorted(self.children, function(a, b) {
             try {
@@ -349,21 +348,12 @@
               //If breadth first, try to stack as much as possible in the first level
               //Then hide what we can't
               if (self.direction == "x+") {
-                /*console.log(c.name + " :: iteration: " + JSON.stringify({
-                  i: i,
-                  self_width: self.width,
-                  self_gutter: self.gutter,
-                  self_interval: self.interval,
-                  first_calc: (sum_minimum_width + c.minimum_width) + " :: " + (self.width - self.gutter * 2 - i * self.interval),
-                  second_calc: c.minimum_height + " :: " + (self.height - self.gutter * 2 - self.interval * i)
-                }));*/
                 if (
                 ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
                   }
-                  //console.log(c.name + " :: can be displayed");
                   sum_optimal_width += c.optimal_width;
                   sum_optimal_height += c.optimal_height;
 
@@ -373,7 +363,6 @@
                   nb_can_be_displayed += 1;
                   clist.push(c);
                 } else {
-                  //console.log(c.name + " :: can't be displayed");
                   //Hide those children that can't be displayed
                   for (var j = i; j < self.children.length; j++) {
                     self.hidden_children++;
@@ -388,7 +377,7 @@
                 }
               } else if (self.direction == "y+") {
                 if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
@@ -447,7 +436,7 @@
                 }
               } else if (self.direction == "y+") {
                 if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2)) && (c.minimum_width <= (self.width - self.gutter * 2 - self.interval * i))) {
+                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
                   if (c.can_be_displayed != true) {
                     c.can_be_displayed = true;
                     eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
@@ -540,6 +529,7 @@
                 if (c.width < c.minimum_width) c.width = c.minimum_width;
                 total_width += c.width;
 
+                //console.log(self.name + " :: Testing: " + total_width + " / " + remaining_width);
                 if (total_width > full_width) {
                   remaining_width = (remaining_width + remaining_width - total_width);
                   dimensions_not_ok = true;
@@ -1143,9 +1133,6 @@
         if (this.implemented_mixins.indexOf(mixin) != -1) {
           return true;
         }
-      },
-      log: function(msg){
-        console.log(o._id + "." + o.name + " :: " + msg);
       }
     })
     //Ensure respawn_props is within
