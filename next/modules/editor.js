@@ -1,5 +1,5 @@
 {
-    "module_type" : "core",
+  "module_type": "core",
     "base_class": "interface.editor",
     "init": function() {
     //Set Component Relative Dimensions
@@ -103,17 +103,16 @@
     // Inputs: NONE
     // Output: NONE
     CodeMirror.commands.cloudsave = function() {
-        
+
       //Quick check to see if json is correct
       try {
-          console.log("Evaluating: " + editor.getValue())
-          evalJSON(editor.getValue());
-      }
-      catch(e) {
-          log("Save failed ( evalJSON )");
-          console.log(e);
-          console.log(editor.getValue());
-          return;
+        console.log("Evaluating: " + editor.getValue())
+        evalJSON(editor.getValue());
+      } catch (e) {
+        log("Save failed ( evalJSON )");
+        console.log(e);
+        console.log(editor.getValue());
+        return;
       }
       self.edited_document.content = btoa(editor.getValue());
       //log("Trying to save object");
@@ -178,7 +177,7 @@
     var bgrect = this.bgrect = paper.rect(0, 0, 100, 100, 10);
     //Set background properties
     bgrect.attr({
-      fill: "#1A1B21",
+      fill: "30-#1A1B21-purple",
         "stroke": "none",
         "fill-opacity": this.fillOpacity,
         "stroke-opacity": 1,
@@ -235,7 +234,8 @@
     hideElement(this.container);
     this.is_visible = false;
     //Connect dropdowns to change events
-    connect(dropdown_db, "onchange", function(e) {e
+    connect(dropdown_db, "onchange", function(e) {
+      e
       e.stop();
       var choice = e.src().options[e.src().selectedIndex].innerHTML;
       self.database = choice;
@@ -360,7 +360,7 @@
           self.editor.setValue(js_beautify(o));
 
           //Set edited document property
-          self.edited_document = PouchDB.utils.extend(null, {},doc);
+          self.edited_document = PouchDB.utils.extend(null, {}, doc);
 
           self.resize();
           self.database = param.database;
