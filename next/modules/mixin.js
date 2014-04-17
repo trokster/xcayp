@@ -1,5 +1,5 @@
 {
-  "version": "0.23",
+  "version": "0.24",
     "module_type": "core",
     "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
@@ -26,7 +26,7 @@
     o.handleEvent("interface.touch_events.translation", function() {
       if (!self.can_be_displayed) return;
       if (self.isInBBox(this.x, this.y, 0)) {
-        self.handleTranslation(this);
+        self.handleTranslation.apply(self, [this]);
       }
     });
 
@@ -67,14 +67,16 @@
           x: self.x,
           y: self.y
         };
-        self.handleDrag(this);
+        self.handleDrag.apply(self, [this]);
         return;
       } else if (evt == "interface.touch_events.drag.end" && self._dragged) {
         self._dragged = false;
-        self.handleDrag(this);
+        self.handleDrag.apply(self, [this]);
         return;
       } else {
-        if (self._dragged) self.handleDrag(this);
+        if (self._dragged) {
+          self.handleDrag.apply(self, [this]);
+        }
       }
     });
 
@@ -103,7 +105,7 @@
     o.handleEvent("interface.touch_events.tap", function() {
       if (!self.can_be_displayed) return;
       if (self.isInBBox(this.x, this.y, 0)) {
-        self.handleTap(this);
+        self.handleTap.apply(self, [this]);
       }
     });
 
@@ -117,7 +119,7 @@
       paper: null,
       border: 0,
       raphAnimDelay: PHI * 1000 / 2,
-      raphAnimType: "bounce",
+      raphAnimType: ">>",
       shapes: {},
       params: {},
       getPaper: function(callback) {
@@ -1133,8 +1135,12 @@
         if (this.implemented_mixins.indexOf(mixin) != -1) {
           return true;
         }
+      },
+      log: function(msg) {
+        window.log(o._id + "." + o.name + " -> " + msg);
+        console.log(o._id + "." + o.name + " :: " + msg);
       }
-    })
+    });
     //Ensure respawn_props is within
     //Respawn props
     if (o.respawn_props.indexOf("respawn_props") == -1) o.respawn_props.unshift("respawn_props");
