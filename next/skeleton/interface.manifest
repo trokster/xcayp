@@ -13,6 +13,8 @@ jss.js
 codemirror.js
 javascript.js
 javascript-hint.js
+jsbeautifier.js
+simple-hint.js 
 NETWORK:
 /
 *

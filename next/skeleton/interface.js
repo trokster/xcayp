@@ -9,7 +9,8 @@ var log = function(txt, severity) {
         "text": txt,
         severity: severity
     });
-} //log = noop;
+}
+//log = noop;
 
 
 //Done defining logging
@@ -129,7 +130,7 @@ var init_main = function(fragment){
         },
         "sync": {
             "from"  : true,
-            "to"    : true
+            "to"    : false
         },
         polling: 1500
     };
@@ -171,6 +172,8 @@ var init_setup = function(){
         //window.location.href = window.location.href.split("#")[0]+"#main";
         //window.location.reload();
     });
+
+    if(!confirm("This operation will delete all local DBs. OK to proceed ?")) return;
 
     //Declare databases
     databases.repositorydb = {

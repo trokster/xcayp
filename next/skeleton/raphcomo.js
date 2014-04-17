@@ -840,6 +840,7 @@ eve.on("database.login.request", function(database, custom){
 
     login.init = function(){
         var self = this;
+        self.border = 5;
 
         if(!isUndefinedOrNull(getElement("login_container"))) {
             //console.log("Another login window is already open, cancelling.");
@@ -867,16 +868,16 @@ eve.on("database.login.request", function(database, custom){
         setStyle(login.paper_container, {width:"100%", height:"100%"});
 
         self.paper = Raphael(login.paper_container);
-        self.background = self.paper.rect(0,0,50,50, 8).attr({
+        self.background = self.paper.rect(self.border/2,self.border/2,50,50, self.border*2).attr({
             "fill":"30-#061A30-#345985", 
-            "stroke":"none",
-            "stroke-width":4
+            "stroke":"white",
+            "stroke-width":self.border
         });
 
         self.username = self.paper.text(0, 0, "Username");
         self.password = self.paper.text(0, 0, "Password");
 
-        if(self.custom) {
+        if(custom) {
             self.title = self.paper.text(0,0,"Please login" + ( custom.remote ? " to\n" + custom.remote : "" ));
         }
         else {
@@ -884,6 +885,9 @@ eve.on("database.login.request", function(database, custom){
         }
 
         self.status = self.paper.text(0,0, "Awaiting login...");
+        if(custom && custom.message){
+            self.status.attr({"text":custom.message});
+        }
 
         map(function(item) {
           item.attr({
@@ -931,11 +935,12 @@ eve.on("database.login.request", function(database, custom){
                 }
                 else {
                     database.database = null;
+                    database.remotedb = null;
                     database.auth = PouchDB.utils.extend(true, {}, {"username":usr, "password":pwd});
                     database.local = usr + " :: " + rhost;
-                    database.remote = "userdb_"+appname+"_generic";
+                    database.remote = "userdb_"+appname+"_"+usr;
 
-                    eve("application.user_validate");
+                    eve("application.user_validate", database);
                 }
 
                 callLater(.5, self.destroy);
@@ -964,7 +969,12 @@ eve.on("database.login.request", function(database, custom){
         self.background.animate({"fill-opacity":1}, 500);
 
         self.resize();
-        self.username_input.focus();
+        if(custom && custom.username){
+            self.username_input.value = custom.username;
+            self.password_input.focus();
+        }else {
+            self.username_input.focus();
+        }
 
         return login;
     }
@@ -990,7 +1000,10 @@ eve.on("database.login.request", function(database, custom){
         if(self.y < 0) self.y = 0;
 
         setElementPosition(self.container, {x:self.x, y:self.y});
-        self.background.attr({width:self.width, height:self.height});
+        self.background.attr({
+            width:self.width - self.border, 
+            height:self.height - self.border
+        });
 
         self.title.attr({
             "x": self.width / 2,
@@ -1103,7 +1116,8 @@ eve.on("database.login.request", function(database, custom){
                             }
                             if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( FROM ) : " + db + " :: " + JSON.stringify(res));
                             if(window.LOG_FAILED_REPLICATION) console.log(err);
-                            if(window.LOG_FAILED_REPLICATION) console.log(res)
+                            if(window.LOG_FAILED_REPLICATION) console.log(res);
+
                         } else {
 
                             if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
@@ -1139,14 +1153,28 @@ eve.on("database.login.request", function(database, custom){
                             }
                             else {
 
-                                if(err.status == 404 || err.status == 401){
+                                if(err.status == 404){
                                     //Means we could not create database, request admin credentials
+                                    //eve("database.login.request", null, databases[db]);
+
+                                    //Only request admon credentials if we are in the setup mode
+                                    var fragment = (window.location+"").split("#");
+                                    if(fragment[1] == "setup"){
+                                        eve("database.login.request", null, databases[db]);
+                                    }
+                                    else {
+                                        if(isUndefinedOrNull(databases[db].user_warning)) databases[db].user_warning = 0;
+                                        if(databases[db].user_warning++ % 10 == 0) log("Database: " + databases[db].remote + " doesn't exist yet. You need to wait for your admin's validation.", 1);
+                                    }
+
+                                }
+                                if(err.status == 401){
+                                    //Means we could not open database, request credentials
                                     eve("database.login.request", null, databases[db]);
                                 }
 
                                 if(window.LOG_FAILED_REPLICATION) log2("Error encountered during replication ( FROM ) : " + db + " :: " + err);
                                 if(window.LOG_FAILED_REPLICATION) console.log(err);
-                                if(window.LOG_FAILED_REPLICATION) console.log(res)
 
                                 eve("database.sync.status." + db, {
                                     success: false,
@@ -1193,7 +1221,7 @@ eve.on("database.login.request", function(database, custom){
                             }
                             if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
                             if(window.LOG_FAILED_REPLICATION) console.log(err);
-                            if(window.LOG_FAILED_REPLICATION) console.log(res)
+                            if(window.LOG_FAILED_REPLICATION) console.log(res);
                         } else {
 
                             if(isUndefinedOrNull(databases[db].replications)) databases[db].replications = {};
@@ -1230,12 +1258,25 @@ eve.on("database.login.request", function(database, custom){
                             else {
                                 if(err.status == 404 || err.status == 401){
                                     //Means we could not create database, request admin credentials
+                                    //eve("database.login.request", null, databases[db]);
+
+                                    //Only request admin credentials if we are in the setup mode
+                                    var fragment = (window.location+"").split("#");
+                                    if(fragment[1] == "setup"){
+                                        eve("database.login.request", null, databases[db]);
+                                    }
+                                    else {
+                                        if(isUndefinedOrNull(databases[db].user_warning)) databases[db].user_warning = 0;
+                                        if(databases[db].user_warning++ % 10 == 0) log("Database: " + databases[db].remote + " doesn't exist yet. You need to wait for your admin's validation.", 1);
+                                    }
+                                }
+                                if(err.status == 401){
+                                    //Username/password error
                                     eve("database.login.request", null, databases[db]);
                                 }
 
                                 if(window.LOG_FAILED_REPLICATION) console.log("Error encountered during replication ( TO ) : " + db + " :: " + err);
                                 if(window.LOG_FAILED_REPLICATION) console.log(err);
-                                if(window.LOG_FAILED_REPLICATION) console.log(res)
 
                                 eve("database.sync.status." + db, {
                                     success: false,
@@ -1525,3 +1566,163 @@ eve.on("interface.request_handle.*", function() {
     }
 
 });
+
+
+eve.on("application.user_validate", function() {
+  var database = this;
+  console.log("Validating user: " + database.auth.username);
+
+  database.local = database.auth.username + "-" + rhost;
+  database.remote = checkIfRewrite(rhost) + "userdb_" + appname + "_" + database.auth.username;
+
+  eve("application.local_user_validate", database);
+
+});
+
+eve.on("application.local_user_validate", function() {
+  var database = this;
+
+  //Try to log on locally and see if first init object exists
+  PouchDB(PouchDB.utils.Crypto.MD5(database.local), function(err, db) {
+    if (!isUndefinedOrNull(err)) {
+      log("Error creating local DB:\n" + database.local + "\n" + JSON.stringify(err), 1);
+      console.log("Error creating local DB:\n" + database.local + "\n", 1);
+      console.log(err);
+      return;
+    } else {
+      db.get("user_init", function(err, doc) {
+        if (!isUndefinedOrNull(err)) {
+          log("Error getting init object, checking remote");
+          eve("application.remote_user_validate", database);
+        } else {
+          //Local DB exists and is valid, set up remote and launch sync
+          log("User exists locally, setting up remote", -1);
+          database.database = db;
+          database.sync.to = true;
+          database.sync.from = true;
+          database.polling = 1500;
+          eve("database.request.sync.userdb");
+        }
+      });
+    }
+  });
+});
+
+eve.on("application.remote_user_validate", function() {
+  var database = this;
+
+  //Try to validate the user remotely
+  var db = rhost.split("://");
+  PouchDB(db[0] + "://" + database.auth.username + ":" + database.auth.password + "@" + db[1] + "_users", function(err, usersdb) {
+    if (!isUndefinedOrNull(err)) {
+      console.log("Error connecting to _users");
+      console.log(err);
+
+      //If message is password incorrect, we have no way to know if user exists
+      //or if password is wrong so we try to create user
+      if (err.message == "Name or password is incorrect.") {
+        if (confirm("User " + database.auth.username + " doesn't seem to exist, would you like to create it ?")) {
+          eve("application.remote_user_create", database);
+          return;
+        } else {
+          log("Login aborted", -1);
+          return;
+        }
+      }
+      //Otherwise we consider it a network problem and ask to connect later
+      else {
+        log("Problem connecting to remote users DB, please try again later", 1);
+      }
+
+    } else {
+      //A valid user exists we're good to go
+
+      //Check if user is valid for this application
+      usersdb.get("org.couchdb.user:" + database.auth.username, function(err, doc){
+        if(doc){
+            if(isUndefinedOrNull(doc.validated)) doc.validated = {};
+            if(isUndefinedOrNull(doc.validated[appname])) {
+                doc.validated[appname] = false;
+                usersdb.put(doc);
+            }
+        }
+      });
+
+
+      log("User exists remotely, setting up local and remote", -1);
+      database.database = PouchDB(PouchDB.utils.Crypto.MD5(database.local), function(err, db) {
+        if (!isUndefinedOrNull(err)) {
+          console.log("Error creating local DB");
+          console.log(err);
+        } else {
+          database.database.put({
+            _id: "user_init",
+              "first_init": true
+          });
+          database.sync.to = true;
+          database.sync.from = true;
+          database.polling = 1500;
+          eve("delayed.100.database.request.sync.userdb");
+        }
+      });
+    }
+  });
+});
+
+eve.on("application.remote_user_create", function() {
+  var database = this;
+  var db = rhost.split("://");
+  PouchDB(rhost + "_users", function(err, usersdb) {
+    if (!isUndefinedOrNull(err)) {
+      console.log("Error connecting to usersdb");
+      console.log(err);
+    } else {
+      //Try to create user
+      usersdb.put({
+        _id: "org.couchdb.user:" + database.auth.username,
+        type: "user",
+        name: database.auth.username,
+        password: database.auth.password,
+        roles: ["reader"]
+      }, function(err, doc) {
+        if (!isUndefinedOrNull(err)) {
+          if (err.message == "Document update conflict.") {
+            //This means the user already exists so essentially it's a
+            //password mistake
+            log("Error creating user.\nWrong password entered earlier.", 1);
+            console.log("Attemtpting to re-summon login");
+            console.log(database.auth.username);
+            eve("delayed.1500.database.login.request", null, databases.userdb, {
+              "remote": "Xcayp",
+                "username": database.auth.username,
+                "message": "User already exists.\nPlease enter correct password"
+            });
+            return;
+          }
+          console.log("Error creating user");
+          console.log(err);
+        } else {
+          //User created correctly, launch sync
+          log("User created remotely, setting up local and remote", -1);
+          database.database = PouchDB(PouchDB.utils.Crypto.MD5(database.local), function(err, db) {
+            if (!isUndefinedOrNull(err)) {
+              console.log("Error creating local DB");
+              console.log(err);
+            } else {
+              database.database.put({
+                _id: "user_init",
+                  "first_init": true
+              });
+              database.sync.to = true;
+              database.sync.from = true;
+              database.polling = 1500;
+              eve("delayed.100.database.request.sync.userdb");
+            }
+          });
+        }
+      });
+    }
+  });
+})
+
+

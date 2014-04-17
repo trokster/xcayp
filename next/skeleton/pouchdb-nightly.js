@@ -5954,6 +5954,7 @@ exports.uuid = function (options) {
 };
 // Determine id an ID is valid
 //   - invalid IDs begin with an underescore that does not begin '_design' or '_local'
+//     or security
 //   - any other string value is a valid id
 // Returns the specific error object for each case
 exports.invalidIdError = function (id) {
@@ -5961,7 +5962,7 @@ exports.invalidIdError = function (id) {
     return errors.MISSING_ID;
   } else if (typeof id !== 'string') {
     return errors.INVALID_ID;
-  } else if (/^_/.test(id) && !(/^_(design|local)/).test(id)) {
+  } else if (/^_/.test(id) && !(/^_(design|local|security)/).test(id)) {
     return errors.RESERVED_ID;
   }
 };
