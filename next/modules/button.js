@@ -1,6 +1,7 @@
 {
-  "version": 0.01,
-  "mixins": ["isDisplayComponent", "canRespawn", "hasPaper", "handlesTap"],
+  "version": 0.02,
+  "module_type":"core",
+    "mixins": ["isDisplayComponent", "canRespawn", "hasPaper", "handlesTap"],
     "init": function() {
     var self = this;
     var d = getViewportDimensions();
@@ -17,7 +18,7 @@
           "font-family": "Arial, Helvetica, sans-serif",
           "fill-opacity": .8,
           "font-weight": "normal",
-          "transform": "T" + (-self.height * 2)
+          "transform": "T" + (self.width / 2) + "," + (-self.height * 2)
       });
 
       if (self.params.attrs_text) self.shapes.attr(self.params.attrs_text);
@@ -26,7 +27,8 @@
       self.shapes.rect.attr({
         "fill": "30-black-darkblue",
           "stroke": "gray",
-          "stroke-width": self.border
+          "stroke-width": self.border,
+          "cursor": "pointer"
       });
 
       if (self.params.attrs_rect) self.shapes.attr(self.params.attrs_rect);
