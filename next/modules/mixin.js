@@ -1114,7 +1114,7 @@
       cleanups: [],
       inits: [],
       postInits: [],
-      respawn_props: ["respawn_props"],
+      respawn_props: ["respawn_props", "params"],
       handleEvent: function(evt, f) {
         eve.on(evt, f);
         this.cleanups.push(function() {
