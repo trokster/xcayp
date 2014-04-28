@@ -944,6 +944,8 @@ eve.on("database.login.request", function(database, custom){
                 }
 
                 callLater(.5, self.destroy);
+                eve("buffered.500.interface.show_ui");
+        
             }
 
             self.status.attr({"text":msg});
@@ -975,7 +977,7 @@ eve.on("database.login.request", function(database, custom){
         }else {
             self.username_input.focus();
         }
-
+        eve("interface.hide_ui");
         return login;
     }
 
@@ -1597,6 +1599,7 @@ eve.on("application.local_user_validate", function() {
         } else {
           //Local DB exists and is valid, set up remote and launch sync
           log("User exists locally, setting up remote", -1);
+          console.log("USER_INIT: " + JSON.stringify(doc));
           database.database = db;
           database.sync.to = true;
           database.sync.from = true;
@@ -1650,7 +1653,7 @@ eve.on("application.remote_user_validate", function() {
 
 
       log("User exists remotely, setting up local and remote", -1);
-      database.database = PouchDB(PouchDB.utils.Crypto.MD5(database.local), function(err, db) {
+      database.database = new PouchDB(PouchDB.utils.Crypto.MD5(database.local), function(err, db) {
         if (!isUndefinedOrNull(err)) {
           console.log("Error creating local DB");
           console.log(err);
@@ -1678,13 +1681,17 @@ eve.on("application.remote_user_create", function() {
       console.log(err);
     } else {
       //Try to create user
-      usersdb.put({
+      var usr = {
         _id: "org.couchdb.user:" + database.auth.username,
         type: "user",
         name: database.auth.username,
         password: database.auth.password,
-        roles: ["reader"]
-      }, function(err, doc) {
+        roles: [],
+        validated:{}
+      };
+      usr.validated[appname] = false;
+
+      usersdb.put(usr, function(err, doc) {
         if (!isUndefinedOrNull(err)) {
           if (err.message == "Document update conflict.") {
             //This means the user already exists so essentially it's a
@@ -1725,4 +1732,278 @@ eve.on("application.remote_user_create", function() {
   });
 })
 
+//User validation
+eve.on("application.user_auto_validation", function() {
+  log("Starting user validation");
 
+  if (isUndefinedOrNull(databases.userdb.auth) || isUndefinedOrNull(databases.userdb.auth.username)) {
+    log("Couldn't connect to users database, please make sure you're logged in as admin and network is available.", 1);
+    return;
+  }
+
+  //Connect to users database
+  PouchDB(rhost + "_users", {
+    auth: databases.userdb.auth
+  }, function(err, usersdb) {
+    if (!isUndefinedOrNull(err)) {
+      log("Couldn't connect to users database, please make sure you're logged in as admin and network is available.", 1);
+      return;
+    } else {
+      log("Connected to _users DB, checking users");
+      usersdb.query("_auth/validated", {
+        key: [appname]
+      }, function(err, doc) {
+        if (err) {
+          if (err.message == "Only admins can access design document actions for system databases.") {
+            log("Couldn't connect to users database, please make sure you're logged in as admin and network is available.", 1);
+            return;
+          }
+          log("Error while parsing through new users", 1);
+          console.log(err);
+          return;
+        } else {
+          map(function(item) {
+            eve("application.user_setup", null, item.value, usersdb);
+          }, doc.rows);
+        }
+      });
+    }
+  });
+});
+
+eve.on("application.user_setup", function(user, usersdb) {
+
+  var custom3 = Raphael.createUUID();
+
+  log("Validating user: " + user._id);
+  console.log("Validating user: " + user._id);
+
+  //Create remote DB
+  var database = new PouchDB(checkIfRewrite(rhost) + "userdb_" + appname + "_" + user.name, {
+    auth: databases.userdb.auth
+  });
+
+  //Define design func
+  var my_func = function(newDoc, oldDoc, userCtx) {
+    if (newDoc._id && newDoc._id.indexOf("_local/") == 0) return;
+    if (userCtx.name == "xxO" || userCtx.name == "xxxO") {
+      //Check if it is a new doc
+      if (!oldDoc) {
+        if (!newDoc.security) throw ({
+          forbidden: 'Document has no security field'
+        });
+        if (!newDoc.security.read) throw ({
+          forbidden: 'Document has no read set for security'
+        });
+        if (!newDoc.security.write) throw ({
+          forbidden: 'Document has no write set for security'
+        });
+
+        //If we're here, we're good to go to write it
+        //One is free to create a document one can't write on ;P
+        return;
+
+      }
+      //Check if user is allowed to actually write on that doc
+      //Check if roles qualifies
+
+      //If admin, we're good, shoot
+      for (var i = 0; i < userCtx.roles.length; i++) {
+        if (userCtx.roles[i] == "_admin") return;
+      }
+
+      if (oldDoc.security && oldDoc.security.write && oldDoc.security.write.roles && userCtx.roles) {
+        for (var i = 0; i < oldDoc.security.write.roles.length; i++) {
+          for (var j = 0; j < userCtx.roles.length; j++) {
+            //Check if a role matches
+            if (oldDoc.security.write.roles[i] == userCtx.roles[j]) return;
+          }
+        }
+      }
+
+      if (oldDoc.security && oldDoc.security.write && oldDoc.security.write.users) {
+        for (var i = 0; i < oldDoc.security.write.users.length; i++) {
+          if (oldDoc.security.write.users[i] == userCtx.name) return;
+        }
+      }
+
+      throw ({
+        forbidden: 'User ' + userCtx.name + ' is not allowed to modify this object.' + userCtx.roles
+      });
+
+    } else {
+      throw ({
+        forbidden: 'Only xxO or xxxO can write here.'
+      });
+    }
+  };
+  my_func = "" + my_func;
+  my_func = my_func.replace(/xxxO/g, databases.userdb.auth.username);
+  my_func = my_func.replace(/xxO/g, user.name);
+
+  //Check if design object exists, if it does, modify design and save
+  //otherwise create it
+
+  database.get("_design/utils", function(err, doc3) {
+    ddoc = {
+      "_id": "_design/utils",
+        "filters": {
+        "local_remote": "" + function(doc, req) {
+          if (!req.userCtx.name) {
+            throw ("Unauthorized!");
+          }
+
+          //And flagged as remote
+          if (doc.type == "remote") {
+            return true;
+          }
+          return false;
+        }
+      },
+        "validate_doc_update": my_func
+    };
+
+    if (isUndefinedOrNull(err)) ddoc._rev = doc3._rev;
+
+    database.put(ddoc, function(a, b) {
+      //console.log(JSON.stringify([err, doc]))
+      eve(custom3);
+    });
+
+    //If this is not a generic user
+    //set up security
+
+    console.log("Setting up security");
+    console.log(user.name + " == " + (appname + "_generic"));
+    if (user.name != (appname + "_generic")) {
+      var sec = {
+        "_id": "_security",
+          "members": {
+          "names": [user.name, databases.userdb.auth.username]
+        }
+      };
+
+      database.put(sec, {
+        auth: databases.userdb.auth
+      }, function(err, doc) {
+        if (err) {
+          console.log("Error setting security object");
+          console.log(err)
+        }
+      });
+      console.log("Security object set up");
+    }
+
+
+  });
+
+  console.log("Setting up replicator");
+  var address = rhost.split("://");
+
+  waitForEvents([custom3]).addCallback(function(){
+      PouchDB(address[0] + "://" + databases.userdb.auth.username + ":" + databases.userdb.auth.password + "@" + address[1] + "_replicator", function(err, database) {
+        if (!isUndefinedOrNull(err)) {
+          console.log("Warning: could not connect to replicator");
+        } else {
+
+          var custom1 = Raphael.createUUID();
+          var custom2 = Raphael.createUUID();
+
+          console.log("Connecting to replicator");
+          database.get("userdb_" + appname + "_" + user.name + "_to_main", function(err_rep1, doc_rep1) {
+            //console.log(doc.name + " :: Replicator entry: " + console.log(JSON.stringify([err_rep1, doc_rep1])));
+            //console.log(doc.name + " :: Creating replication entry for: " + doc.name);
+            var replicate = {
+              "_id": "userdb_" + appname + "_" + user.name + "_to_main",
+                "source": "userdb_" + appname + "_" + user.name,
+                "target": "application_data_" + appname,
+                "filter": "utils/local_remote",
+                "continuous": true,
+                "user_ctx": {
+                "name": databases.userdb.auth.username,
+                  "roles": user.roles,
+                  "requester": user.name
+              }
+            };
+            if (isUndefinedOrNull(err_rep1)) {
+              //console.log(doc.name + " :: Replicator exists, deleting(1)");
+              database.remove(doc_rep1, function(err, response) {
+                //console.log(doc.name + " :: Replicator removed, putting(1)");
+                //replicate._rev = doc2._rev;
+                database.put(replicate, function(err, response) {
+                  eve(custom1);
+                });
+              });
+            } else {
+              //console.log(doc.name + " :: Replicator doesn't exist, creating(1)");
+              database.put(replicate, function(err, response) {
+                eve(custom1);
+              });
+            }
+
+          });
+
+          database.get("main_to_userdb_" + appname + "_" + user.name, function(err_rep2, doc_rep2) {
+            //console.log("Replicator entry: " + console.log(JSON.stringify([err_rep2, doc_rep2])));
+            //console.log("Creating replication entry(2) for: " + doc.name);
+            var param_roles = list(user.roles);
+
+            param_roles.push("_admin");
+            param_roles.push(user.name);
+
+            var replicate = {
+              "_id": "main_to_userdb_" + appname + "_" + user.name,
+                "target": "userdb_" + appname + "_" + user.name,
+                "source": "application_data_" + appname,
+                "filter": "utils/remote_local",
+                "continuous": true,
+                "user_ctx": {
+                "name": databases.userdb.auth.username,
+                  "roles": param_roles,
+                  "requester": user.name
+              }
+            };
+            if (isUndefinedOrNull(err_rep2)) {
+              //console.log(doc.name + " :: Replicator exists, deleting(2)");
+              database.remove(doc_rep2, function(err, response) {
+                //replicate._rev = doc2._rev;
+                //console.log(doc.name + " :: Replicator removed, putting(2)");
+                database.put(replicate, function(err, response) {
+                  eve(custom2);
+                });
+              });
+            } else {
+              //console.log(doc.name + " :: Replicator doesn't exist, creating(2)");
+              database.put(replicate, function(err, response) {
+                eve(custom2);
+              });
+            }
+
+
+          });
+
+          waitForEvents([custom1, custom2]).addCallback(function() {
+            user.validated[appname] = true;
+            var address = rhost.split("://");
+            console.log("Everything completed, trying to set user to validated for this application: " + usersdb);
+            usersdb.get(user._id, function(err, doc) {
+              if (!err) {
+                doc.validated = doc.validated || {};
+                doc.validated[appname] = true;
+                if(findValue(doc.roles, "reader") == -1) doc.roles.push("reader");
+                usersdb.put(doc, function(err, doc) {
+                  log("User validated: " + user.name);
+                  console.log("User validated");
+                });
+              } else {
+                console.log(err);
+              }
+            });
+
+          });
+        }
+      });
+    });
+
+
+});

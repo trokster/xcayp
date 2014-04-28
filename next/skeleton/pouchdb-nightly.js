@@ -2196,7 +2196,7 @@ function IdbPouch(opts, callback) {
       var merged = merge.merge(oldDoc.rev_tree, docInfo.metadata.rev_tree[0], 1000);
       var wasPreviouslyDeleted = utils.isDeleted(oldDoc);
       var inConflict = (wasPreviouslyDeleted &&
-                        utils.isDeleted(docInfo.metadata)) ||
+                        utils.isDeleted(docInfo.metadata) && newEdits) ||
         (!wasPreviouslyDeleted && newEdits && merged.conflicts !== 'new_leaf');
 
       if (inConflict) {
@@ -5954,7 +5954,6 @@ exports.uuid = function (options) {
 };
 // Determine id an ID is valid
 //   - invalid IDs begin with an underescore that does not begin '_design' or '_local'
-//     or security
 //   - any other string value is a valid id
 // Returns the specific error object for each case
 exports.invalidIdError = function (id) {
@@ -5962,7 +5961,7 @@ exports.invalidIdError = function (id) {
     return errors.MISSING_ID;
   } else if (typeof id !== 'string') {
     return errors.INVALID_ID;
-  } else if (/^_/.test(id) && !(/^_(design|local|security)/).test(id)) {
+  } else if (/^_/.test(id) && !(/^_(design|security|local)/).test(id)) {
     return errors.RESERVED_ID;
   }
 };
@@ -5997,7 +5996,7 @@ exports.call = exports.getArguments(function (args) {
 });
 
 exports.isLocalId = function (id) {
-  return (/^_local/).test(id);
+  return (/^_(local|security)/).test(id);
 };
 
 // check if a specific revision of a doc has been deleted

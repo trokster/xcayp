@@ -35,6 +35,10 @@ var init = function(){
     });
 */
 
+    //Disconnect any sessions as this can interfere with
+    //user checks / setup / creation
+    doXHR(checkIfRewrite(rhost)+"_session", {method:"DELETE"});
+
     log2("Analyzing fragment" );
 
     var fragment = (window.location+"").split("#");
@@ -121,11 +125,13 @@ var init_main = function(fragment){
         "filter_to": function(doc, req){
             if(doc && doc._id.substr(0,7) == "_design") return false;
             if(doc && doc._id.substr(0,7) == "_local/") return false;
+            if(isUndefinedOrNull(doc._deleted) && ( isUndefinedOrNull(doc.type) || doc.type!="remote" )) return false;
             return true;
         },
         "filter_from": function(doc, req){
             if(doc && doc._id.substr(0,7) == "_design") return false;
             if(doc && doc._id.substr(0,7) == "_local/") return false;
+            if(isUndefinedOrNull(doc._deleted) && ( isUndefinedOrNull(doc.type) || doc.type!="remote" )) return false;
             return true;
         },
         "sync": {
@@ -323,8 +329,71 @@ var init_setup = function(){
                     eve("interface.catalog.fetch");
                 }
             });
-            eve("interface.create_core_database");
 
+            //Create application database
+            PouchDB(checkIfRewrite(rhost)+"application_data_"+appname, {auth:databases.repositorydb.auth} ,function(err, appdb){
+                if(err){
+                    console.log("Error creating application database");
+                    console.log(err);
+                }
+                if(!err){
+                    appdb.put(
+                        {_id:"_security", "members":{
+                            "names" : [databases.repositorydb.auth.username],
+                            "roles" : ["_admin"]
+                        }}
+                    );
+                    appdb.put(
+                        {
+                           "_id": "_design/utils",
+                           "filters": {
+                               "remote_local": "function (doc, req) {if (!req.userCtx) {throw ({forbidden:'Unauthorized!'});}if (!req.userCtx.name) {throw ('Unauthorized!');}if(doc._deleted){return true;}if(doc.type != 'remote' || !doc.security || !doc.security.read ) return false;if(req.userCtx.roles && doc.security.read.roles){for(var i=0 ; i<req.userCtx.roles.length;i++){for(var j=0;j<doc.security.read.roles.length;j++){if(doc.security.read.roles[j] == 'all' || doc.security.read.roles[j] == req.userCtx.roles[i]) return true;}}}if(req.userCtx.roles && doc.security.read.users){for (var i = 0; i < req.userCtx.roles.length; i++) {for (var j = 0; j < doc.security.read.users.length; j++) {if (doc.security.read.users[j] == req.userCtx.roles[i]) return true;}}}return false;}"
+                           }
+                        }
+                    );
+                }
+            });
+
+            //Create generic user
+            //and view for usersdb
+            console.log("Creating generic user");
+            PouchDB(rhost+"_users", {auth:databases.repositorydb.auth} ,function(err, usersdb){
+                if(err){
+                    console.log("Error connecting to _users");
+                    console.log(err);
+                }
+                if(!err){
+                    console.log("Putting generic user");
+                    var usr = {
+                        _id: "org.couchdb.user:" + appname + "_generic",
+                        type: "user",
+                        name: appname + "_generic",
+                        roles: ["reader"],
+                        validated: {}
+                    };
+                    usr.validated[appname] = false;
+                    usersdb.put(usr, function(err, doc){
+                        if(err){
+                            console.log("Error creating generic user");
+                            console.log(err);
+                        }
+                    });
+
+                    usersdb.get("_design/_auth", function(err, doc){
+                        if(!err){
+                            if(!doc.views) doc.views = {};
+                            doc.views["validated"] = {
+                                "map": "function(doc) {\n  if(doc.validated) {\n     for(var item in doc.validated) {\n\tif(doc.validated[item] == false)\n     \temit([item], doc);\n     }\n  }\n}"
+                            };
+                            usersdb.put(doc);
+                        }
+                    });
+
+                }
+            });
+
+
+            eve("interface.create_core_database");
 
         });
 
