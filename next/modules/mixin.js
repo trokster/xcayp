@@ -1,5 +1,5 @@
 {
-  "version": "0.24",
+  "version": "0.25",
     "module_type": "core",
     "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
@@ -118,8 +118,8 @@
     setdefault(o, {
       paper: null,
       border: 0,
-      raphAnimDelay: PHI * 1000 / 2,
-      raphAnimType: ">>",
+      raphAnimDelay: PHI * 1000 / 4,
+      raphAnimType: "smooth",
       shapes: {},
       params: {},
       getPaper: function(callback) {
@@ -217,6 +217,7 @@
       gutter: 10,
       //Space between elements
       interval: 2,
+      _queued_layouts: 0,
       hidden_children: 0,
       sortChildren: function(a, b) {
         try {
@@ -247,12 +248,14 @@
       },
       _handleLayoutRequestRoot: function() {
         //Check if self is dirty, if so: recalculate minimum_width for self and set parent to dirty
+        //self.log("Handle root layout request: " + JSON.stringify([self.width, self.height]));
         if (self._dirty) {
 
           self.optimal_width = self.gutter * 2;
           self.optimal_height = self.gutter * 2;
           self.minimum_width = self.gutter * 2;
           self.minimum_height = self.gutter * 2;
+
           if (self.children.length > 0) {
 
             if (self.layout_direction == "breadth_first") {
@@ -264,15 +267,19 @@
                 self.minimum_height += listMax(map(function(c) {
                   return c.minimum_height;
                 }, self.children));
-              } else {
+              } else if (self.direction == "y+") {
                 self.minimum_width += listMax(map(function(c) {
                   return c.minimum_width;
                 }, self.children));
                 self.minimum_height += self.children[0].minimum_height;
+              } else if (self.direction == "x+y+") {
+                self.minimum_width += self.children[0].minimum_width;
+                self.minimum_height += self.children[0].minimum_height;
               }
             }
+
             if (self.direction == "x+") {
-              self.optimal_width += listMax(map(function(c) {
+              self.optimal_width += sum(map(function(c) {
                 return c.optimal_width
               }, self.children));
 
@@ -280,15 +287,25 @@
                 return c.optimal_height;
               }, self.children));
 
-            }
-
-            if (self.direction == "y+") {
-              self.optimal_height += listMax(map(function(c) {
+            } else if (self.direction == "y+") {
+              self.optimal_height += sum(map(function(c) {
                 return c.optimal_height
               }, self.children));
 
               self.optimal_width += listMax(map(function(c) {
                 return c.optimal_width;
+              }, self.children));
+            } else if (self.direction == "x+y+") {
+
+              //self.optimal_height += self.children[0].optimal_height;
+              //self.optimal_width += self.children[0].optimal_width;
+
+              self.optimal_width += listMax(map(function(c) {
+                return c.optimal_width
+              }, self.children));
+
+              self.optimal_height += listMax(map(function(c) {
+                return c.optimal_height;
               }, self.children));
             }
 
@@ -298,6 +315,7 @@
           }
           self._dirty = false;
         }
+        //self.log("Post root layout request: " + JSON.stringify([self.optimal_width, self.optimal_height]));
         //If we are not root parent, we pass it to parent
         if (!isUndefinedOrNull(self.parent)) {
           eve("interface.layout_request_root." + self.parent._id + "." + self.parent.name, false);
@@ -308,316 +326,561 @@
               eve("delayed.0.interface.request_do_layout." + self._id + "." + self.name);
             }
           } else {
-            eve("buffered.200.interface.layout_request_root." + self._id + "." + self.name, true);
+            eve("buffered.0.interface.layout_request_root." + self._id + "." + self.name, true);
           }
         }
       },
       doLayout: function() {
         //Lock self
         eve("interface.minimas_change", self);
+
+        //if (self._queued_layouts > 0) {
+        if (self._queued_layouts > 0) {
+          self.log("A layout is already in queue, cancelling");
+          return;
+        }
+        self._queued_layouts++;
+
+        //self.log("Performing layout");
         var d = self.lock.acquire();
         d.addCallback(function() {
-
+          self._queued_layouts--;
+          //self.log("Lock acquired");
           if (self._being_destroyed || self._destroyed) {
             self.lock.release();
+            eve("buffered.0.interface.response_do_layout." + self._id + "." + self.name);
             return;
           }
 
-          var nb_can_be_displayed = 0;
+          //self.log("Pre-layout: " + JSON.stringify([self.width, self.height]));
 
-          var sum_optimal_width = 0;
-          var sum_optimal_height = 0;
+          /* WARN: This whole algorythm ( "x+" and "y+" needs major rework and optimisation */
+          if (self.direction == "x+" || self.direction == "y+") {
 
-          var sum_minimum_width = 0;
-          var sum_minimum_height = 0;
+            var nb_can_be_displayed = 0;
 
-          //Sort children by priority ( shouldn't have to )
-          self.children = sorted(self.children, function(a, b) {
-            try {
-              return compare(a.priority, b.priority);
-            } catch (e) {
-              return compare("" + a.priority, "" + b.priority)
-            }
-          });
+            var sum_optimal_width = 0;
+            var sum_optimal_height = 0;
 
-          self.hidden_chidren = 0;
-          //Compute which elements can be shown
-          var clist = [];
-          for (var i = 0; i < self.children.length; i++) {
-            var c = self.children[i];
+            var sum_minimum_width = 0;
+            var sum_minimum_height = 0;
 
-            if (self.layout_direction == "breadth_first") {
-              //If breadth first, try to stack as much as possible in the first level
-              //Then hide what we can't
-              if (self.direction == "x+") {
-                if (
-                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
-                  if (c.can_be_displayed != true) {
-                    c.can_be_displayed = true;
-                    eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
-                  }
-                  sum_optimal_width += c.optimal_width;
-                  sum_optimal_height += c.optimal_height;
+            //Sort children by priority ( shouldn't have to )
+            self.children = sorted(self.children, function(a, b) {
+              try {
+                return compare(a.priority, b.priority);
+              } catch (e) {
+                return compare("" + a.priority, "" + b.priority)
+              }
+            });
 
-                  sum_minimum_width += c.minimum_width;
-                  sum_minimum_height += c.minimum_height;
+            self.hidden_chidren = 0;
+            //Compute which elements can be shown
+            var clist = [];
+            for (var i = 0; i < self.children.length; i++) {
+              var c = self.children[i];
+              //self.log("Checking if I can display: " + c);
 
-                  nb_can_be_displayed += 1;
-                  clist.push(c);
-                } else {
-                  //Hide those children that can't be displayed
-                  for (var j = i; j < self.children.length; j++) {
-                    self.hidden_children++;
-                    var cc = self.children[j];
-                    if (cc.can_be_displayed == true) {
-                      cc.can_be_displayed = false;
-                      eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+              if (self.layout_direction == "breadth_first") {
+                //If breadth first, try to stack as much as possible in the first level
+                //Then hide what we can't
+
+                if (self.direction == "x+") {
+                  if (
+                  ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
+                    if (c.can_be_displayed != true) {
+                      c.can_be_displayed = true;
+                      eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
                     }
+                    sum_optimal_width += c.optimal_width;
+                    sum_optimal_height += c.optimal_height;
+
+                    sum_minimum_width += c.minimum_width;
+                    sum_minimum_height += c.minimum_height;
+
+                    nb_can_be_displayed += 1;
+                    clist.push(c);
+                  } else {
+                    //Hide those children that can't be displayed
+                    for (var j = i; j < self.children.length; j++) {
+                      self.hidden_children++;
+                      var cc = self.children[j];
+                      if (cc.can_be_displayed == true) {
+                        cc.can_be_displayed = false;
+                        eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+                      }
+                    }
+                    //cut it off here
+                    break;
                   }
-                  //cut it off here
-                  break;
+                } else if (self.direction == "y+") {
+                  if (
+                  ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
+                    if (c.can_be_displayed != true) {
+                      c.can_be_displayed = true;
+                      eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
+                    }
+                    sum_optimal_width += c.optimal_width;
+                    sum_optimal_height += c.optimal_height;
+
+                    sum_minimum_width += c.minimum_width;
+                    sum_minimum_height += c.minimum_height;
+
+                    nb_can_be_displayed += 1;
+                    clist.push(c);
+                  } else {
+                    //Hide those children that can't be displayed
+                    for (var j = i; j < self.children.length; j++) {
+                      self.hidden_children++;
+                      var cc = self.children[j];
+                      if (cc.can_be_displayed == true) {
+                        cc.can_be_displayed = false;
+                        eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+                      }
+                    }
+                    //cut it off here
+                    break;
+                  }
                 }
-              } else if (self.direction == "y+") {
-                if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
-                  if (c.can_be_displayed != true) {
-                    c.can_be_displayed = true;
-                    eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
-                  }
-                  sum_optimal_width += c.optimal_width;
-                  sum_optimal_height += c.optimal_height;
-
-                  sum_minimum_width += c.minimum_width;
-                  sum_minimum_height += c.minimum_height;
-
-                  nb_can_be_displayed += 1;
-                  clist.push(c);
-                } else {
-                  //Hide those children that can't be displayed
-                  for (var j = i; j < self.children.length; j++) {
-                    self.hidden_children++;
-                    var cc = self.children[j];
-                    if (cc.can_be_displayed == true) {
-                      cc.can_be_displayed = false;
-                      eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+              } else {
+                //If depth first, we go deep first and check children minimas
+                if (self.direction == "x+") {
+                  if (
+                  ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
+                    if (c.can_be_displayed != true) {
+                      c.can_be_displayed = true;
+                      eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
                     }
+                    sum_optimal_width += c.optimal_width;
+                    sum_optimal_height += c.optimal_height;
+
+                    sum_minimum_width += c.minimum_width;
+                    sum_minimum_height += c.minimum_height;
+
+                    nb_can_be_displayed += 1;
+                    clist.push(c);
+                  } else {
+                    //Hide those children that can't be displayed
+                    for (var j = i; j < self.children.length; j++) {
+                      self.hidden_children++;
+                      var cc = self.children[j];
+                      if (cc.can_be_displayed == true) {
+                        cc.can_be_displayed = false;
+                        eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+                      }
+                    }
+                    //cut it off here
+                    break;
                   }
-                  //cut it off here
-                  break;
+                } else if (self.direction == "y+") {
+                  if (
+                  ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
+                    if (c.can_be_displayed != true) {
+                      self.hidden_children -= 1;
+                      c.can_be_displayed = true;
+                      eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
+                    }
+                    sum_optimal_width += c.optimal_width;
+                    sum_optimal_height += c.optimal_height;
+
+                    sum_minimum_width += c.minimum_width;
+                    sum_minimum_height += c.minimum_height;
+
+                    nb_can_be_displayed += 1;
+                    clist.push(c);
+                  } else {
+                    //Hide those children that can't be displayed
+                    for (var j = i; j < self.children.length; j++) {
+                      self.hidden_children++;
+                      var cc = self.children[j];
+                      if (cc.can_be_displayed == true) {
+                        cc.can_be_displayed = false;
+                        eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
+                      }
+                    }
+                    //cut it off here
+                    break;
+                  }
                 }
               }
-            } else {
-              //If depth first, we go deep first and check children minimas
-              if (self.direction == "x+") {
-                if (
-                ((sum_minimum_width + c.minimum_width) <= (self.width - self.gutter * 2 - i * self.interval)) && (c.minimum_height <= (self.height - self.gutter * 2))) {
-                  if (c.can_be_displayed != true) {
-                    c.can_be_displayed = true;
-                    eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
-                  }
-                  sum_optimal_width += c.optimal_width;
-                  sum_optimal_height += c.optimal_height;
+              //self.log(c + " can be displayed");
+            }
 
-                  sum_minimum_width += c.minimum_width;
-                  sum_minimum_height += c.minimum_height;
+            //Compute dimensions
+            var remaining_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
+            var remaining_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
 
-                  nb_can_be_displayed += 1;
-                  clist.push(c);
-                } else {
-                  //Hide those children that can't be displayed
-                  for (var j = i; j < self.children.length; j++) {
-                    self.hidden_children++;
-                    var cc = self.children[j];
-                    if (cc.can_be_displayed == true) {
-                      cc.can_be_displayed = false;
-                      eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
-                    }
-                  }
-                  //cut it off here
-                  break;
-                }
-              } else if (self.direction == "y+") {
-                if (
-                ((sum_minimum_height + c.minimum_height) <= (self.height - self.gutter * 2 - i * self.interval)) && (c.minimum_width <= (self.width - self.gutter * 2))) {
-                  if (c.can_be_displayed != true) {
-                    c.can_be_displayed = true;
-                    eve("delayed.0.interface.appear_request." + c._id + "." + c.name);
-                  }
-                  sum_optimal_width += c.optimal_width;
-                  sum_optimal_height += c.optimal_height;
+            //self.log("Remainings: " + JSON.stringify([remaining_width, remaining_height]));
 
-                  sum_minimum_width += c.minimum_width;
-                  sum_minimum_height += c.minimum_height;
+            var full_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
+            var full_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
 
-                  nb_can_be_displayed += 1;
-                  clist.push(c);
-                } else {
-                  //Hide those children that can't be displayed
-                  for (var j = i; j < self.children.length; j++) {
-                    self.hidden_children++;
-                    var cc = self.children[j];
-                    if (cc.can_be_displayed == true) {
-                      cc.can_be_displayed = false;
-                      eve("delayed.0.interface.hide_request." + cc._id + "." + cc.name);
-                    }
-                  }
-                  //cut it off here
-                  break;
-                }
+            var dimensions_not_ok = true;
+            var loop_cut_off = 0;
+
+            var distribute = function(type, items, remainder) {
+
+              var length = filter(function(item) {
+                return item["adamantium"] == true ? false : true;
+              }, items).length;
+              if (length == 0) {
+                map(function(item) {
+                  item[type] += remainder / items.length;
+                }, items);
+              } else {
+                map(function(item) {
+                  if (item["adamantium"] != true) item[type] += remainder / length;
+                }, items);
               }
             }
-          }
 
-          //Compute dimensions
-          var remaining_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
-          var remaining_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
 
-          var full_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
-          var full_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
+            while (dimensions_not_ok) {
+              dimensions_not_ok = false;
+              //safety switch
 
-          var dimensions_not_ok = true;
-          var loop_cut_off = 0;
+              if (remaining_width < 0 || remaining_height < 0) {
 
-          var distribute = function(type, items, remainder) {
+                var c = clist.pop();
+                c.can_be_displayed = false;
+                eve("delayed.0.interface.hide_request." + c._id + "." + c.name);
+                remaining_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
+                remaining_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
+                sum_optimal_width -= c.optimal_width;
+                sum_optimal_height -= c.optimal_height;
 
-            var length = filter(function(item) {
-              return item["adamantium"] == true ? false : true;
-            }, items).length;
-            if (length == 0) {
-              map(function(item) {
-                item[type] += remainder / items.length;
-              }, items);
-            } else {
-              map(function(item) {
-                if (item["adamantium"] != true) item[type] += remainder / length;
-              }, items);
+              }
+
+              //WARNING: this is supposing you cant have more than 200 children
+              if (loop_cut_off++ > 200) {
+                console.log(self.name + " :: cutoff reached");
+                break;
+              }
+              var total_width = 0;
+              var total_height = 0;
+
+              for (var i = 0; i < clist.length; i++) {
+                var c = clist[i];
+
+                if (self.direction == "x+") {
+                  if (sum_optimal_width >= 0) {
+                    c.width = c.optimal_width / sum_optimal_width * remaining_width;
+                  } else {
+                    c.width = 0;
+                  }
+                  //Handling cases where weant the height to remain mostly constant
+                  if (c.adamantium) {
+                    c.width = c.minimum_width;
+                  }
+                  if (c.width < c.minimum_width) c.width = c.minimum_width;
+                  total_width += c.width;
+
+                  //console.log(self.name + " :: Testing: " + total_width + " / " + remaining_width);
+                  if (total_width > full_width) {
+                    remaining_width = (remaining_width + remaining_width - total_width);
+                    dimensions_not_ok = true;
+                    break;
+                  } else if (i == (clist.length - 1)) {
+                    if (total_width < full_width) distribute("width", clist, full_width - total_width);
+                  }
+
+                }
+                if (self.direction == "y+") {
+
+                  if (sum_optimal_height >= 0) {
+                    c.height = c.optimal_height / sum_optimal_height * remaining_height;
+                  } else {
+                    c.height = 0;
+                  }
+
+                  //Handling cases where weant the height to remain mostly constant
+                  if (c.adamantium) {
+                    c.height = c.minimum_height;
+                  }
+                  if (c.height < c.minimum_height) c.height = c.minimum_height;
+                  total_height += c.height;
+
+                  //console.log(self.name + " :: Testing: " + total_height + " / " + remaining_height);
+                  if (total_height > full_height) {
+                    remaining_height = (remaining_height + remaining_height - total_height);
+                    dimensions_not_ok = true;
+                    break;
+                  } else if (i == (clist.length - 1)) {
+                    if (total_height < full_height) distribute("height", clist, full_height - total_height);
+                  }
+                }
+
+                //self.log("Setting ( x+, y+ ) " + c + " to " + JSON.stringify([c.width, c.height]));
+              }
             }
-          }
 
 
-          while (dimensions_not_ok) {
-            dimensions_not_ok = false;
-            //safety switch
+            //order objects by... order
+            clist = sorted(clist, function(a, b) {
+              try {
+                return compare(a.order, b.order);
+              } catch (e) {
+                return compare("" + a.order, "" + b.order)
+              }
+            });
 
-            if (remaining_width < 0 || remaining_height < 0) {
-              var c = clist.pop();
-              c.can_be_displayed = false;
-              eve("delayed.0.interface.hide_request." + c._id + "." + c.name);
-              remaining_width = self.width - self.gutter * 2 - self.interval * (clist.length - 1);
-              remaining_height = self.height - self.gutter * 2 - self.interval * (clist.length - 1);
-              sum_optimal_width -= c.optimal_width;
-              sum_optimal_height -= c.optimal_height;
-
-            }
-
-            //WARNING: this is supposing you cant have more than 200 children
-            if (loop_cut_off++ > 200) {
-              console.error(self.name + " :: cutoff reached");
-              break;
-            }
-            var total_width = 0;
-            var total_height = 0;
+            var currentX = self.gutter;
+            var currentY = self.gutter;
+            //Lay out those elements that can be shown
+            var waits = [];
 
             for (var i = 0; i < clist.length; i++) {
               var c = clist[i];
 
-
               if (self.direction == "x+") {
-                c.width = c.optimal_width / sum_optimal_width * remaining_width;
-                //Handling cases where weant the height to remain mostly constant
-                if (c.adamantium) {
-                  c.width = c.minimum_width;
-                }
-                if (c.width < c.minimum_width) c.width = c.minimum_width;
-                total_width += c.width;
 
-                //console.log(self.name + " :: Testing: " + total_width + " / " + remaining_width);
-                if (total_width > full_width) {
-                  remaining_width = (remaining_width + remaining_width - total_width);
-                  dimensions_not_ok = true;
-                  break;
-                } else if (i == (clist.length - 1)) {
-                  if (total_width < full_width) distribute("width", clist, full_width - total_width);
-                }
+                c.setDimensions(c.width, self.height - self.gutter * 2);
+                c.setPosition(self.x + currentX, self.y + self.gutter);
 
-
+                currentX += (c.width + self.interval);
               }
               if (self.direction == "y+") {
-                c.height = c.optimal_height / sum_optimal_height * remaining_height;
-                //Handling cases where weant the height to remain mostly constant
-                if (c.adamantium) {
-                  c.height = c.minimum_height;
-                }
-                if (c.height < c.minimum_height) c.height = c.minimum_height;
-                total_height += c.height;
 
-                //console.log(self.name + " :: Testing: " + total_height + " / " + remaining_height);
-                if (total_height > full_height) {
-                  remaining_height = (remaining_height + remaining_height - total_height);
-                  dimensions_not_ok = true;
+                c.setDimensions(self.width - self.gutter * 2, c.height);
+                c.setPosition(self.x + self.gutter, self.y + currentY);
+
+                currentY += (c.height + self.interval);
+              }
+
+              //Message those elements to lay themselves out
+              waits.push("interface.response_do_layout." + c._id + "." + c.name);
+              //self.log("Ordering " + c + " to do layout");
+              eve("delayed.0.interface.request_do_layout." + c._id + "." + c.name);
+
+            }
+            //Wait for layout ok from those elements
+            //self.log(" waiting for: " + JSON.stringify(waits));
+            waitForEvents(waits).addCallback(function() {
+              //console.log(self.name + " :: Got response for all my displaying children");
+              //self.log(self.name + " :: Got response for all my displaying children: " + (self.children.length ? self.children[0].can_be_displayed : "NONE"));
+              eve("buffered.0.interface.response_do_layout." + self._id + "." + self.name);
+              //self.log("Layout complete");
+              //self.log("Lock released");
+              self.lock.release();
+            });
+          } else if (self.direction == "x+y+") {
+
+            //Sort children by priority ( shouldn't have to )
+            /*self.children = sorted(self.children, function(a, b) {
+              try {
+                return compare(a.priority, b.priority);
+              } catch (e) {
+                return compare("" + a.priority, "" + b.priority)
+              }
+            });*/
+
+            var available_width = self.width - self.gutter * 2;
+            var available_height = self.height - self.gutter * 2;
+            var check_transposed_keep = [];
+
+            //Ordered lists
+            var children_by_order = sorted(self.children, function(a, b) {
+              try {
+                return compare(a.order, b.order);
+              } catch (e) {
+                return compare("" + a.order, "" + border);
+              }
+            });
+
+            var children_by_priority = sorted(self.children, function(a, b) {
+              try {
+                return compare(a.priority, b.priority);
+              } catch (e) {
+                return compare("" + a.priority, "" + b.priority);
+              }
+            });
+
+            var check_children_by_order = [];
+            //Initializations
+            for (var k = 0; k < children_by_priority.length; k++) {
+              //Add child to list
+              check_children_by_order.push(children_by_priority[k]);
+              check_children_by_order = sorted(check_children_by_order, function(a, b) {
+                try {
+                  return compare(a.order, b.order);
+                } catch (e) {
+                  return compare("" + a.order, "" + border);
+                }
+              });
+
+              var check_widths_by_order = map(function(c) {
+                return c.minimum_width;
+              }, check_children_by_order);
+              //console.log("Checking: " + JSON.stringify(check_widths_by_order));
+
+              //Run children list through partition check
+              check_parts = [];
+              for (var i = 1; i <= check_widths_by_order.length; i++) {
+                var check_next_part = true;
+
+                check_parts = linear_partition(check_widths_by_order, i);
+                for (var j = 0; j < check_parts.length; j++) {
+                  //self.log("Checking partition: " + i + " : row: " + j + " :" + (sum(parts[j]) + (parts[j].length - 1) * self.interval + 2 * self.gutter) + " > " + available_width + " :: " + ((sum(parts[j]) + (parts[j].length - 1) * self.interval + 2 * self.gutter) > available_width));
+                  if ((sum(check_parts[j]) + (check_parts[j].length - 1) * self.interval + 2 * self.gutter) > available_width) {
+                    check_next_part = false;
+                    break;
+                  }
+                }
+                if (check_next_part) break;
+              }
+
+              //Check that all widths are correct
+              var break_outer = false;
+              for (var j = 0; j < check_parts.length; j++) {
+                if ((sum(check_parts[j]) + (check_parts[j].length - 1) * self.interval + 2 * self.gutter) > available_width) {
+                  break_outer = true;
                   break;
-                } else if (i == (clist.length - 1)) {
-                  if (total_height < full_height) distribute("height", clist, full_height - total_height);
                 }
               }
 
+              if (break_outer) {
+                break;
+              }
+
+              //console.log("PART CHECKED: " + JSON.stringify(check_parts));
+              check_transposed = [];
+              var check_count = 0;
+
+              //console.log("CHECK: " + JSON.stringify(check_parts));
+
+              for (var ii = 0; ii < check_parts.length; ii++) {
+                for (var jj = 0; jj < check_parts[ii].length; jj++) {
+                  if (isUndefinedOrNull(check_transposed[ii])) check_transposed[ii] = [];
+                  check_transposed[ii][jj] = check_children_by_order[check_count++];
+                }
+              }
+              //self.log("LOG: " + flattenArray(check_transposed).length);
+
+              //Further check that total height is not more than available_height
+              var sum_heights = sum(map(function(childrow) {
+                return listMax(map(function(c) {
+                  return c.minimum_height;
+                }, childrow))
+              }, check_transposed));
+
+              //console.log("Height check: " + (sum_heights + self.interval * (check_parts.length - 1)) + " > " + available_height);
+              if ((sum_heights + self.interval * (check_parts.length - 1)) > available_height) {
+                break;
+              }
+
+              //console.log("Height / Width check out, keeping: " + children_by_priority[k]);
+              check_transposed_keep = check_transposed;
+              //self.log("Keeping: " + flattenArray(check_transposed_keep).length);
+
             }
+
+            var transposed = check_transposed_keep;
+            //self.log("OK this is what we keep: " + flattenArray(transposed).length);
+
+            var pos = {
+              x: self.x,
+              y: self.y
+            }
+
+            //hide those children that cannot be displayed
+            var children_to_show = flattenArray(transposed);
+
+            map(function(child) {
+              window.children_to_show = children_to_show;
+              window.child = child;
+
+              if (findIdentical(children_to_show, child) == -1) {
+                //Set off hiding for that child
+                if (child.can_be_displayed == true) {
+                  self.hidden_children += 1;
+                  child.can_be_displayed = false;
+                  eve("delayed.0.interface.hide_request." + child);
+                }
+              }
+            }, self.children);
+
+            var waits = [];
+            for (var i = 0; i < transposed.length; i++) {
+
+              var sum_widths = sum(map(function(item) {
+                return item.minimum_width;
+              }, transposed[i]));
+
+              var sum_heights = sum(map(function(childrow) {
+                return listMax(map(function(c) {
+                  return c.minimum_height;
+                }, childrow))
+              }, transposed));
+
+              var remaining_width = available_width - (transposed[i].length - 1) * self.interval - sum_widths;
+              var remaining_height = available_height - (transposed.length - 1) * self.interval - sum_heights;
+
+              var target_height = listMax(map(function(item) {
+                return item.minimum_height;
+              }, transposed[i]));
+
+              var remaining_height = remaining_height / transposed.length;
+              //console.log("Remaining_height = " + remaining_height);
+              for (var j = 0; j < transposed[i].length; j++) {
+                var child = transposed[i][j];
+
+                //We're now at child level, make sure child can be displayed
+                if (child.can_be_displayed == false) {
+                  self.hidden_children -= 1;
+                  child.can_be_displayed = true;
+                  eve("delayed.0.interface.appear_request." + child);
+                }
+
+                var remaining_width_share = remaining_width / transposed[i].length;
+
+                child.x = pos.x + self.gutter + j * self.interval;
+                child.y = pos.y + self.gutter;
+                child.width = child.minimum_width + remaining_width_share;
+                child.height = target_height + remaining_height;
+
+                //self.log("Setting " + child + " to: " + JSON.stringify([child.width, child.height]));
+
+
+                //Message those elements to lay themselves out
+                waits.push("interface.response_do_layout." + child);
+                //self.log("Ordering " + child + " to do layout");
+                eve("delayed.0.interface.request_do_layout." + child);
+
+                pos.x += child.minimum_width + remaining_width_share;
+
+              }
+
+              pos.x = self.x;
+              pos.y = pos.y + target_height + self.interval + remaining_height;
+            }
+
+            //Wait for layout ok from those elements
+            //self.log(" waiting for: " + JSON.stringify(waits));
+            waitForEvents(waits).addCallback(function() {
+              //console.log(self.name + " :: Got response for all my displaying children");
+              //self.log(self.name + " :: Got response for all my displaying children: " + (self.children.length ? self.children[0].can_be_displayed : "NONE"));
+              eve("buffered.0.interface.response_do_layout." + self._id + "." + self.name);
+              //self.log("Layout complete");
+              //self.log("Lock released");
+              self.lock.release();
+            });
+
           }
 
 
-          //order objects by... order
-          clist = sorted(clist, function(a, b) {
-            try {
-              return compare(a.order, b.order);
-            } catch (e) {
-              return compare("" + a.order, "" + b.order)
-            }
-          });
-
-          var currentX = self.gutter;
-          var currentY = self.gutter;
-          //Lay out those elements that can be shown
-          var waits = [];
-
-          for (var i = 0; i < clist.length; i++) {
-            var c = clist[i];
-
-            if (self.direction == "x+") {
-
-              c.setDimensions(c.width, self.height - self.gutter * 2);
-              c.setPosition(self.x + currentX, self.y + self.gutter);
-
-              currentX += (c.width + self.interval);
-            }
-            if (self.direction == "y+") {
-
-              c.setDimensions(self.width - self.gutter * 2, c.height);
-              c.setPosition(self.x + self.gutter, self.y + currentY);
-
-              currentY += (c.height + self.interval);
-            }
-
-            //Message those elements to lay themselves out
-            waits.push("interface.response_do_layout." + c._id + "." + c.name);
-            eve("delayed.0.interface.request_do_layout." + c._id + "." + c.name);
-
-          }
-          //Wait for layout ok from those elements
-          //console.log(self.name + " :: waiting for: " + waits);
-          waitForEvents(waits).addCallback(function() {
-            //console.log(self.name + " :: Got response for all my displaying children");
-            //console.log(self.name + " :: Got response for all my displaying children: " + (self.children.length ? self.children[0].can_be_displayed : "NONE"));
-            eve("buffered.0.interface.response_do_layout." + self._id + "." + self.name);
-            self.lock.release();
-          });
         });
 
         map(function(r) {
           o.respawn_props.push(r)
         }, ["direction", "adamantium", "gutter", "interval"]);
-      },
+      }
 
     });
+
+    //Quick sanity check
+    while (o.width <= (o.gutter * 2 - o.interval)) o.width += 10;
+    while (o.height <= (o.gutter * 2 - o.interval)) o.height += 10;
+
     //Always add in mixins after setting defaults
     //Otherwise variables passed as params will be ignored
     window.mixins.isDisplayComponent(o);
@@ -633,6 +896,7 @@
     o.handleEvent("interface.hierarchy." + o._id + "." + o.name + ".*", o._handleHierarchyChange);
 
     o.handleEvent("interface.hide_request." + o._id + "." + o.name, function() {
+      //self.log("Hiding");
       self.can_be_displayed = false;
       eve("interface.visibility_change", o);
       map(function(c) {
@@ -643,6 +907,7 @@
 
     o.handleEvent("interface.appear_request." + o._id + "." + o.name, function() {
       self.can_be_displayed = true;
+      //self.log("Showing");
       eve("interface.visibility_change", o);
       //self._dirty = true;
       //eve("interface.layout_request_root." + self._id + "." + self.name, false);
@@ -830,12 +1095,18 @@
       parent: null,
       children: [],
       appendChildren: function(children) {
+        var self = this;
+
         if (isUndefinedOrNull(children)) return;
         if (!isArrayLike(children)) children = [children];
         map(bind(function(child) {
           var added = false;
 
           if (this.children.indexOf(child) == -1) {
+            if (child._being_destroyed || child._destroyed) {
+              //self.log("Append: Ignoring destroyed child: " + child);
+              return;
+            }
             added = true;
             if (!isUndefinedOrNull(child.parent)) child.parent.removeChildren(child);
             child.removeChildren && child.removeChildren(this);
@@ -846,6 +1117,7 @@
               child: child,
               type: "new"
             });
+            //self.log("Appended: " + child);
           }
         }, this), children);
         //If sortChildren is defined, sort the children
@@ -854,6 +1126,7 @@
         }
       },
       removeChildren: function(children) {
+        var self = this;
         if (isUndefinedOrNull(children)) return;
         if (!isArrayLike(children)) children = [children];
 
@@ -864,6 +1137,7 @@
               child: child,
               type: "remove"
             });
+            //self.log("Removed: " + child);
 
             child.parent = null;
           }
@@ -913,8 +1187,8 @@
     setdefault(o, {
       x: 0,
       y: 0,
-      width: 20,
-      height: 20,
+      width: 50,
+      height: 50,
       origx: -1000,
       origy: -1000,
       setPosition: function(x, y) {
@@ -968,6 +1242,16 @@
       //Don't forget to lock and return event
       doLayout: function() {
         eve("delayed.0.interface.response_do_layout." + this._id + "." + this.name);
+      },
+      requestRootLayout: function() {
+        var self = this;
+
+        //self.log("Requesting parent layout");
+        if (self.parent) {
+          self._dirty = true;
+          self.parent._dirty = true;
+          eve("buffered.0.interface.layout_request_root." + self.parent);
+        }
       }
     });
 
@@ -990,6 +1274,10 @@
 
     var self = o;
     o.handleEvent("interface.request_do_layout." + o._id + "." + o.name, o._runHandleDoLayout);
+
+    o.postInits.push(function() {
+      if (o.can_be_displayed && o.parent) o.doLayout();
+    });
 
   },
     "hasDiv": function(o) {
@@ -1114,6 +1402,7 @@
       cleanups: [],
       inits: [],
       postInits: [],
+      params: {},
       respawn_props: ["respawn_props", "params"],
       handleEvent: function(evt, f) {
         eve.on(evt, f);
@@ -1122,7 +1411,7 @@
         });
       },
       handleEventOnce: function(evt, f) {
-        eve.once(evt, f);
+        f = bind(f, o);
         this.cleanups.push(function() {
           try {
             eve.off(evt, f);
@@ -1137,10 +1426,19 @@
         }
       },
       log: function(msg) {
-        window.log(o._id + "." + o.name + " -> " + msg);
-        console.log(o._id + "." + o.name + " :: " + msg);
+        //window.log(o + " -> " + msg);
+        console.log(o + " :: " + msg);
+      },
+      completeLayout: function() {
+        var self = o;
+        eve("interface.response_do_layout." + self);
+        //self.log("Lock released");
+        self.lock && self.lock.release();
       }
     });
+    o.toString = function() {
+      return o._id + "." + o.name;
+    }
     //Ensure respawn_props is within
     //Respawn props
     if (o.respawn_props.indexOf("respawn_props") == -1) o.respawn_props.unshift("respawn_props");
