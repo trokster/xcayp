@@ -1,5 +1,5 @@
 {
-  "version": "0.25",
+  "version": "0.24",
     "module_type": "core",
     "description": "Class mixins \
     Allows 'interface' definitions... Please note this is not a real mixin implmentation, \
@@ -1411,7 +1411,7 @@
         });
       },
       handleEventOnce: function(evt, f) {
-        f = bind(f, o);
+        eve.once(evt, f);
         this.cleanups.push(function() {
           try {
             eve.off(evt, f);
