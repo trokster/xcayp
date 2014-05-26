@@ -81,6 +81,23 @@ var init = function(){
         else if(env == "setup"){
             return init_setup(fragment);
         }
+        //For the problematic case where you would need to rollback a given
+        //interface object without launching the whole shebang
+        //a.k.a. I fucked up, please help me.
+        else if(env == "rollback" ) {
+            log2("Captured rollback request");
+            if(!isUndefinedOrNull(fragment[1])){
+                log2("Rolling back: " + fragment[1]);
+                PouchDB(PouchDB.utils.Crypto.MD5("core_interface-" + rhost), function(err, database){
+                    if(err){
+                        console.log("Couldn't connect to local DB: " + err);
+                        return;
+                    }
+                    eve("interface.rollback_request", null, database, fragment[1]);
+                });
+            }
+            return;
+        }
     }
 
     //Otherwise, we launch main
@@ -159,6 +176,7 @@ var init_main = function(fragment){
 
     eve.once("database.sync.status.interfacedb", function(){
         //First sync status will be from ( success or fail, doesn't matter )
+        console.log("First sync OK, launching main");
         eve("interface.request.main_interface", {"id":"main_interface"});
     });
 }
@@ -225,24 +243,31 @@ var init_setup = function(){
     };
 
     log2("Destroying local DBs", 1);
-    PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.interfacedb.local));
-    PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.repositorydb.local));
+
+    var deferreds = [new Deferred(), new Deferred()];
+
+    PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.interfacedb.local), function(err, doc){
+        PouchDB.destroy(PouchDB.utils.Crypto.MD5(databases.repositorydb.local), function(err, doc){
+
+            //Launch init on all databases
+            log2("Creating all databases");
+            map(function(db) {
+                console.log("Registering: " + "database.created."+db);
+                eve.once("database.created."+db, function(){
+
+                    console.log("Created, launching sync: " + "database.request.sync."+db)
+
+                    eve("database.request.sync."+db);
+                    eve("database.request.changes."+db);
+                });
+                eve("database.init."+db);
+
+            }, keys(databases));
 
 
-    //Launch init on all databases
-    log2("Creating all databases");
-    map(function(db) {
-        console.log("Registering: " + "database.created."+db);
-        eve.once("database.created."+db, function(){
-
-            console.log("Created, launching sync: " + "database.request.sync."+db)
-
-            eve("database.request.sync."+db);
-            eve("database.request.changes."+db);
         });
-        eve("database.init."+db);
+    });
 
-    }, keys(databases));
 
     //Consider we need to be online for initial setup
     eve.once("database.initial.replication.to.repositorydb", function(){

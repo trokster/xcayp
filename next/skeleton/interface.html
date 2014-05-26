@@ -6,13 +6,80 @@
 		<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/> 
 		<meta name="apple-mobile-web-app-capable" content="yes" /> 
 		<meta name="apple-mobile-web-app-status-bar-style" content="black" /> 
-		<link rel="apple-touch-icon" href="icon.png"/> 
+		<link rel="apple-touch-icon" href="xcayp.png"/> 
 		<link rel="apple-touch-startup-image" href="startup.png" /> 
 
         <link rel="stylesheet" href="./codemirror.css">
         <link rel="stylesheet" href="./cobalt.css">
-        <link rel="stylesheet" href="./simple-hint.css">
+        <link rel="stylesheet" href="./dialog.css">
         
+        <script type="text/javascript" charset="utf-8">
+          function qsort(a, k, l, r) {
+            //Nicked from a gist I can't locate anymore, please yell if you see it.
+
+            // a: array to sort, k: key to sort by,
+            // l, r: optional array index array range
+
+            // i: stack index, s: stack,
+            // p: pivot index, v: pivot value,
+            // t: temporary array item,
+            // x, y: partion low/high
+
+            var i, s, p, v, t, x, y;
+
+            l = l || 0;
+            r = r || a.length - 1;
+
+            i = 2;
+            s = [l, r];
+
+            while (i > 0) {
+              r = s[--i];
+              l = s[--i];
+
+              if (l < r) {
+                // partition
+
+                x = l;
+                y = r - 1;
+
+                p = l;
+                v = a[p];
+                a[p] = a[r];
+
+                while (true) {
+                  while (
+                    x <= y &&
+                    a[x] != undefined &&
+                    (""+a[x]) < (""+v) )
+                    x++;
+                  while (
+                    x <= y &&
+                    a[y] != undefined &&
+                    (""+a[y]) >= (""+v))
+                    y--;
+                  if (x > y)
+                    break;
+                  t = a[x];
+                  a[x] = a[y];
+                  a[y] = t;
+                }
+
+                a[r] = a[x];
+                a[x] = v;
+
+                // end
+
+                s[i++] = l;
+                s[i++] = x - 1;
+                s[i++] = x + 1;
+                s[i++] = r;
+              }
+            }
+          }
+        </script>
+
+
         <script src="./MochiKit.js"               type="text/javascript" charset="utf-8"></script>
         <script src="./jss.js"                    type="text/javascript" charset="utf-8"></script>
         <script src="./raphael.min.js"            type="text/javascript" charset="utf-8"></script>
@@ -20,9 +87,10 @@
         <script src="./raphcomo.js"               type="text/javascript" charset="utf-8"></script>
         <script src="./codemirror.js"             type="text/javascript" charset="utf-8"></script>
         <script src="./javascript.js"             type="text/javascript" charset="utf-8"></script>
+        <script src="./search.js"                 type="text/javascript" charset="utf-8"></script>
+        <script src="./searchcursor.js"           type="text/javascript" charset="utf-8"></script>
+        <script src="./dialog.js"                 type="text/javascript" charset="utf-8"></script>
         <script src="./jsbeautifier.js"           type="text/javascript" charset="utf-8"></script>
-        <script src="./simple-hint.js"            type="text/javascript" charset="utf-8"></script>
-        <script src="./javascript-hint.js"        type="text/javascript" charset="utf-8"></script>
         <script src="./interface.js"              type="text/javascript" charset="utf-8"></script>
 
 		<style type="text/css">
@@ -67,6 +135,20 @@
                 overflow-y:hidden;
                 opacity:0;
             }
+
+            .CodeMirror-vscrollbar {
+              right: 0; top: 0;
+              overflow-x: hidden;
+              overflow-y: scroll;
+            }
+            .CodeMirror-hscrollbar {
+              bottom: 0; left: 0;
+              overflow-y: hidden;
+              overflow-x: hidden;
+            }
+            .cm-s-cobalt.CodeMirror { background: none; color: white; }
+            .cm-s-cobalt .CodeMirror-gutters { background: none; border-right: 1px solid #aaa; }
+
         </style>
 	</head>
 	<body class="bodyclass">
