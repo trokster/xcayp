@@ -1,6 +1,8 @@
 Xcayp
 =====
 
+DISCLAIMER : - no longer maintained, really old libraries
+
 Have you ever dreamt of working on your websites from any device with a browser? Xcayp allow this and much more.
 
 Xcayp is a modular online interface in which the code is stored in a web oriented database (couchdb) with advanced 
@@ -59,15 +61,6 @@ and will not be persistent nor sent to the server
 When the page is up, click on top right JS icon ( half hidden ), and start playing with your interface.
 ( remote saves not allowed )
 
-Click to play at:
-
-https://xcayp.com
-
-Development version is here:
-
-https://dev01.xcayp.com
-
-
 
 OK it works, what next ?
 ------------------------
@@ -77,18 +70,5 @@ You can edit interface elements, create new ones ( just enter an id that doesn't
 Interface elements are called in main_interface object. Then eve.js is used to pass messages around.
 
 Have a look at main interface and layer to get a gist of how things are done.
-
-
-Bring it on, I Couch like a pro
--------------------------------
-
-If you want to have your own server you will need to replicate the following couchdb databases:
- - Interface DB for replication https://xcayp.com/interface
- - Data DB for replication https://xcayp.com/data
- - remote sandbox for ie to simulate local: https://xcayp.com/local_interface
- - remote sandbox for ie to simulate local: https://xcayp.com/local_data
-Then go to: https://your.couchdb.database.com/interface/_design/interface/interface.html
-
-
 
 
